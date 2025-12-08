@@ -1,0 +1,1291 @@
+{
+    "openapi": "3.0.0",
+    "info": {
+        "title": "Klinik API",
+        "description": "Dokumentasi API untuk sistem klinik.",
+        "version": "1.0.0"
+    },
+    "servers": [
+        {
+            "url": "http://my-default-host.com",
+            "description": "Klinik API server"
+        }
+    ],
+    "paths": {
+        "/api/auth/login": {
+            "post": {
+                "tags": [
+                    "Auth"
+                ],
+                "summary": "Login user dan mendapatkan token API",
+                "operationId": "68c5cab6a386991c65ac59f24f9695a2",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "required": [
+                                    "email",
+                                    "password"
+                                ],
+                                "properties": {
+                                    "email": {
+                                        "type": "string",
+                                        "format": "email"
+                                    },
+                                    "password": {
+                                        "type": "string",
+                                        "format": "password"
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Berhasil login"
+                    },
+                    "422": {
+                        "description": "Validasi gagal / kredensial salah"
+                    }
+                }
+            }
+        },
+        "/api/auth/register": {
+            "post": {
+                "tags": [
+                    "Auth"
+                ],
+                "summary": "Registrasi pasien baru",
+                "operationId": "b19d234c1f0e111853ad9f83072b04b8",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "required": [
+                                    "name",
+                                    "email",
+                                    "password",
+                                    "password_confirmation"
+                                ],
+                                "properties": {
+                                    "name": {
+                                        "type": "string"
+                                    },
+                                    "email": {
+                                        "type": "string",
+                                        "format": "email"
+                                    },
+                                    "password": {
+                                        "type": "string",
+                                        "format": "password",
+                                        "minLength": 8
+                                    },
+                                    "password_confirmation": {
+                                        "type": "string",
+                                        "format": "password",
+                                        "minLength": 8
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "201": {
+                        "description": "Berhasil registrasi"
+                    },
+                    "422": {
+                        "description": "Validasi gagal"
+                    }
+                }
+            }
+        },
+        "/api/auth/logout": {
+            "post": {
+                "tags": [
+                    "Auth"
+                ],
+                "summary": "Logout dan revoke token saat ini",
+                "operationId": "a03f1137c4c903d1965e492c020f7ff6",
+                "responses": {
+                    "200": {
+                        "description": "Berhasil logout"
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            }
+        },
+        "/api/auth/me": {
+            "get": {
+                "tags": [
+                    "Auth"
+                ],
+                "summary": "Mendapatkan data user yang sedang login",
+                "operationId": "3d3b0a70b8aa585c13fb3383dbe55cda",
+                "responses": {
+                    "200": {
+                        "description": "Data user"
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            }
+        },
+        "/api/jadwal-dokter": {
+            "get": {
+                "tags": [
+                    "JadwalDokter"
+                ],
+                "summary": "List jadwal dokter",
+                "operationId": "7470f02a32814270bb2d266dfc5e12e3",
+                "parameters": [
+                    {
+                        "name": "per_page",
+                        "in": "query",
+                        "schema": {
+                            "type": "integer",
+                            "default": 15
+                        }
+                    },
+                    {
+                        "name": "dokter_id",
+                        "in": "query",
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK"
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            },
+            "post": {
+                "tags": [
+                    "JadwalDokter"
+                ],
+                "summary": "Buat jadwal dokter",
+                "operationId": "8b476020845183c15d79cd209a183eea",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {}
+                        }
+                    }
+                },
+                "responses": {
+                    "201": {
+                        "description": "Created"
+                    },
+                    "422": {
+                        "description": "Unprocessable Entity"
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            }
+        },
+        "/api/jadwal-dokter/{id}": {
+            "get": {
+                "tags": [
+                    "JadwalDokter"
+                ],
+                "summary": "Detail jadwal dokter",
+                "operationId": "b6c581ec6bed2ca2bc2b33a24866aab6",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK"
+                    },
+                    "404": {
+                        "description": "Not Found"
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            },
+            "put": {
+                "tags": [
+                    "JadwalDokter"
+                ],
+                "summary": "Update jadwal dokter",
+                "operationId": "6040b856ca2c39bbdf9e2db80d31e1d4",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "required": false,
+                    "content": {
+                        "application/json": {
+                            "schema": {}
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "OK"
+                    },
+                    "422": {
+                        "description": "Unprocessable Entity"
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            },
+            "delete": {
+                "tags": [
+                    "JadwalDokter"
+                ],
+                "summary": "Hapus jadwal dokter",
+                "operationId": "d209020c062db7db1ee5f2e72e19170d",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "204": {
+                        "description": "No Content"
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            }
+        },
+        "/api/jadwal-dokter/dokter/{dokter_id}": {
+            "get": {
+                "tags": [
+                    "JadwalDokter"
+                ],
+                "summary": "Jadwal per dokter (jika ada kolom dokter_id)",
+                "operationId": "5934284fd5a0f11507274e725453a348",
+                "parameters": [
+                    {
+                        "name": "dokter_id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK"
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            }
+        },
+        "/api/notifikasis": {
+            "get": {
+                "tags": [
+                    "Notifikasi"
+                ],
+                "summary": "List notifikasi untuk user login",
+                "operationId": "c4e0c3fc9410a20a9a00618850942d48",
+                "parameters": [
+                    {
+                        "name": "per_page",
+                        "in": "query",
+                        "schema": {
+                            "type": "integer",
+                            "default": 15
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK"
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            }
+        },
+        "/api/notifikasis/{id}": {
+            "get": {
+                "tags": [
+                    "Notifikasi"
+                ],
+                "summary": "Detail notifikasi",
+                "operationId": "3051775e84e595d9ca495da4655b6014",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK"
+                    },
+                    "404": {
+                        "description": "Not Found"
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            },
+            "delete": {
+                "tags": [
+                    "Notifikasi"
+                ],
+                "summary": "Hapus notifikasi",
+                "operationId": "f5cc3259301ebff552a5924fc7ecf472",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "204": {
+                        "description": "No Content"
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            }
+        },
+        "/api/notifikasis/{id}/mark-read": {
+            "post": {
+                "tags": [
+                    "Notifikasi"
+                ],
+                "summary": "Tandai satu notifikasi sebagai sudah dibaca (jika ada kolom read_at / is_read)",
+                "operationId": "2f4db1b9cd830f90433c20e0e0b0bd00",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK"
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            }
+        },
+        "/api/notifikasis/mark-all-read": {
+            "post": {
+                "tags": [
+                    "Notifikasi"
+                ],
+                "summary": "Tandai semua notifikasi user sebagai sudah dibaca",
+                "operationId": "890cbe8e346451c8ba82f43cc8a74583",
+                "responses": {
+                    "200": {
+                        "description": "OK"
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            }
+        },
+        "/api/notifikasis/unread-count": {
+            "get": {
+                "tags": [
+                    "Notifikasi"
+                ],
+                "summary": "Jumlah notifikasi belum dibaca",
+                "operationId": "7d217e4145814e454be0230283134a14",
+                "responses": {
+                    "200": {
+                        "description": "OK"
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            }
+        },
+        "/api/pembayarans": {
+            "get": {
+                "tags": [
+                    "Pembayaran"
+                ],
+                "summary": "List pembayaran",
+                "operationId": "c9f441ee27430a632e8e076c835a1226",
+                "parameters": [
+                    {
+                        "name": "per_page",
+                        "in": "query",
+                        "schema": {
+                            "type": "integer",
+                            "default": 15
+                        }
+                    },
+                    {
+                        "name": "status",
+                        "in": "query",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "user_id",
+                        "in": "query",
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK"
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            },
+            "post": {
+                "tags": [
+                    "Pembayaran"
+                ],
+                "summary": "Buat pembayaran/tagihan baru",
+                "operationId": "180e35e108543a6add9ea085efdb4155",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {}
+                        }
+                    }
+                },
+                "responses": {
+                    "201": {
+                        "description": "Created"
+                    },
+                    "422": {
+                        "description": "Unprocessable Entity"
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            }
+        },
+        "/api/pembayarans/{id}": {
+            "get": {
+                "tags": [
+                    "Pembayaran"
+                ],
+                "summary": "Detail pembayaran",
+                "operationId": "6f4d40f14756e447c428b84dc1fe90a9",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK"
+                    },
+                    "404": {
+                        "description": "Not Found"
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            },
+            "put": {
+                "tags": [
+                    "Pembayaran"
+                ],
+                "summary": "Update pembayaran",
+                "operationId": "177db0e9fb8e4b775b28067614165ff7",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "required": false,
+                    "content": {
+                        "application/json": {
+                            "schema": {}
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "OK"
+                    },
+                    "422": {
+                        "description": "Unprocessable Entity"
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            },
+            "delete": {
+                "tags": [
+                    "Pembayaran"
+                ],
+                "summary": "Hapus pembayaran",
+                "operationId": "cc929fe4b125042a348a9caf48d61304",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "204": {
+                        "description": "No Content"
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            }
+        },
+        "/api/pembayarans/{id}/upload-bukti": {
+            "post": {
+                "tags": [
+                    "Pembayaran"
+                ],
+                "summary": "Upload bukti pembayaran (jika ada kolom bukti_path)",
+                "operationId": "732441e2ce650e8388b7243d007b0464",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "multipart/form-data": {
+                            "schema": {
+                                "properties": {
+                                    "bukti": {
+                                        "description": "File bukti pembayaran",
+                                        "type": "string",
+                                        "format": "binary"
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "OK"
+                    },
+                    "422": {
+                        "description": "Unprocessable Entity"
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            }
+        },
+        "/api/pembayarans/pasien/{user_id}": {
+            "get": {
+                "tags": [
+                    "Pembayaran"
+                ],
+                "summary": "Pembayaran per pasien (jika ada kolom user_id)",
+                "operationId": "40c1c06c9600dc8abd2da930a0808eee",
+                "parameters": [
+                    {
+                        "name": "user_id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK"
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            }
+        },
+        "/api/pendaftarans": {
+            "get": {
+                "tags": [
+                    "Pendaftaran"
+                ],
+                "summary": "List pendaftaran (paginate)",
+                "operationId": "f95f6d120de1f9487eae29d3af15fa77",
+                "parameters": [
+                    {
+                        "name": "per_page",
+                        "in": "query",
+                        "required": false,
+                        "schema": {
+                            "type": "integer",
+                            "default": 15
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK"
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            },
+            "post": {
+                "tags": [
+                    "Pendaftaran"
+                ],
+                "summary": "Buat pendaftaran baru",
+                "operationId": "574c913bb7c8c845eb7972cdeacf03ad",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "description": "Field mengikuti fillable di model Pendaftaran"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "201": {
+                        "description": "Berhasil dibuat"
+                    },
+                    "422": {
+                        "description": "Gagal menyimpan"
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            }
+        },
+        "/api/pendaftarans/{id}": {
+            "get": {
+                "tags": [
+                    "Pendaftaran"
+                ],
+                "summary": "Detail pendaftaran",
+                "operationId": "5f039c46da909332067fea059e032d67",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK"
+                    },
+                    "404": {
+                        "description": "Tidak ditemukan"
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            },
+            "put": {
+                "tags": [
+                    "Pendaftaran"
+                ],
+                "summary": "Update pendaftaran",
+                "operationId": "c2e364cb8aa8129680c04a9ef028d20c",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "required": false,
+                    "content": {
+                        "application/json": {
+                            "schema": {}
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Berhasil diupdate"
+                    },
+                    "422": {
+                        "description": "Gagal menyimpan"
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            },
+            "delete": {
+                "tags": [
+                    "Pendaftaran"
+                ],
+                "summary": "Hapus pendaftaran",
+                "operationId": "5edfebacbe277ff0d01d12421f7cee49",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "204": {
+                        "description": "Berhasil dihapus"
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            }
+        },
+        "/api/pendaftarans/hari-ini": {
+            "get": {
+                "tags": [
+                    "Pendaftaran"
+                ],
+                "summary": "Pendaftaran hari ini (berdasarkan created_at jika ada)",
+                "operationId": "5aa49b0e636d07d5ff6185673dc6e201",
+                "responses": {
+                    "200": {
+                        "description": "OK"
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            }
+        },
+        "/api/pendaftarans/{id}/checkin": {
+            "post": {
+                "tags": [
+                    "Pendaftaran"
+                ],
+                "summary": "Check-in pendaftaran (optional, tergantung schema)",
+                "operationId": "525428802dcf79b5cf49ac982fe36fdd",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Check-in berhasil"
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            }
+        },
+        "/api/profile": {
+            "get": {
+                "tags": [
+                    "Profile"
+                ],
+                "summary": "Detail profil user login",
+                "operationId": "526a42c275fd243376d4b533d9099ca8",
+                "responses": {
+                    "200": {
+                        "description": "OK"
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            },
+            "put": {
+                "tags": [
+                    "Profile"
+                ],
+                "summary": "Update profil user login",
+                "operationId": "e993679e53b3ece28f7d010f3fbd77d2",
+                "requestBody": {
+                    "required": false,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "properties": {
+                                    "name": {
+                                        "type": "string"
+                                    },
+                                    "email": {
+                                        "type": "string",
+                                        "format": "email"
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Profil terupdate"
+                    },
+                    "422": {
+                        "description": "Validasi gagal"
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            }
+        },
+        "/api/profile/password": {
+            "post": {
+                "tags": [
+                    "Profile"
+                ],
+                "summary": "Update password user login",
+                "operationId": "34e14e374a2fdcb747159678c7517d5f",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "required": [
+                                    "current_password",
+                                    "password",
+                                    "password_confirmation"
+                                ],
+                                "properties": {
+                                    "current_password": {
+                                        "type": "string",
+                                        "format": "password"
+                                    },
+                                    "password": {
+                                        "type": "string",
+                                        "format": "password",
+                                        "minLength": 8
+                                    },
+                                    "password_confirmation": {
+                                        "type": "string",
+                                        "format": "password",
+                                        "minLength": 8
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Password terupdate"
+                    },
+                    "422": {
+                        "description": "Validasi gagal"
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            }
+        },
+        "/api/rekam-medis": {
+            "get": {
+                "tags": [
+                    "RekamMedis"
+                ],
+                "summary": "List rekam medis",
+                "operationId": "97edcf7750b3f7675ab0e39ef46264a6",
+                "parameters": [
+                    {
+                        "name": "per_page",
+                        "in": "query",
+                        "schema": {
+                            "type": "integer",
+                            "default": 15
+                        }
+                    },
+                    {
+                        "name": "user_id",
+                        "in": "query",
+                        "schema": {
+                            "type": "integer"
+                        }
+                    },
+                    {
+                        "name": "pendaftaran_id",
+                        "in": "query",
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK"
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            },
+            "post": {
+                "tags": [
+                    "RekamMedis"
+                ],
+                "summary": "Buat rekam medis baru",
+                "operationId": "8524ef1b5270b866c7ff20b6ea229d78",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {}
+                        }
+                    }
+                },
+                "responses": {
+                    "201": {
+                        "description": "Created"
+                    },
+                    "422": {
+                        "description": "Unprocessable Entity"
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            }
+        },
+        "/api/rekam-medis/{id}": {
+            "get": {
+                "tags": [
+                    "RekamMedis"
+                ],
+                "summary": "Detail rekam medis",
+                "operationId": "0d8a9a7860103714e1e4468f14a26f97",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK"
+                    },
+                    "404": {
+                        "description": "Not Found"
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            },
+            "put": {
+                "tags": [
+                    "RekamMedis"
+                ],
+                "summary": "Update rekam medis",
+                "operationId": "6c7c52ce8075a6a0b8ef38bd719854a4",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "required": false,
+                    "content": {
+                        "application/json": {
+                            "schema": {}
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "OK"
+                    },
+                    "422": {
+                        "description": "Unprocessable Entity"
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            },
+            "delete": {
+                "tags": [
+                    "RekamMedis"
+                ],
+                "summary": "Hapus rekam medis",
+                "operationId": "995b223b177d269bc0640ff77d0566a0",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "204": {
+                        "description": "No Content"
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            }
+        },
+        "/api/rekam-medis/pasien/{user_id}": {
+            "get": {
+                "tags": [
+                    "RekamMedis"
+                ],
+                "summary": "List rekam medis per pasien (jika ada kolom user_id)",
+                "operationId": "b96d411efbb3354d148cb2305def95f0",
+                "parameters": [
+                    {
+                        "name": "user_id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK"
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            }
+        }
+    },
+    "components": {
+        "securitySchemes": {
+            "sanctum": {
+                "type": "http",
+                "description": "Masukkan token dalam format: Bearer {token}",
+                "bearerFormat": "JWT",
+                "scheme": "bearer"
+            }
+        }
+    },
+    "tags": [
+        {
+            "name": "Auth",
+            "description": "Autentikasi API (login, register, logout)"
+        },
+        {
+            "name": "JadwalDokter",
+            "description": "Jadwal praktik dokter"
+        },
+        {
+            "name": "Notifikasi",
+            "description": "Notifikasi untuk user"
+        },
+        {
+            "name": "Pembayaran",
+            "description": "Pembayaran & tagihan"
+        },
+        {
+            "name": "Pendaftaran",
+            "description": "Pendaftaran & antrian pasien"
+        },
+        {
+            "name": "Profile",
+            "description": "Profil user (akun yang sedang login)"
+        },
+        {
+            "name": "RekamMedis",
+            "description": "Rekam medis pasien"
+        }
+    ]
+}
