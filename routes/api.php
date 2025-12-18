@@ -29,12 +29,12 @@ Route::prefix('auth')->group(function () {
 
 Route::middleware('auth:sanctum')->group(function () {
 
-    // Profile
+    // ===== Profile =====
     Route::get('/profile', [ProfileApiController::class, 'show']);
     Route::put('/profile', [ProfileApiController::class, 'update']);
     Route::post('/profile/password', [ProfileApiController::class, 'updatePassword']);
 
-    // ===== Pendaftaran (konsisten dengan anotasi: /api/pendaftarans) =====
+    // ===== Pendaftaran (konsisten: /api/pendaftarans) =====
     Route::get('pendaftarans/hari-ini', [PendaftaranApiController::class, 'today']);
     Route::post('pendaftarans/{pendaftaran}/checkin', [PendaftaranApiController::class, 'checkin']);
     Route::apiResource('pendaftarans', PendaftaranApiController::class);
@@ -51,7 +51,7 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('notifikasis/unread-count', [NotifikasiApiController::class, 'unreadCount']);
     Route::post('notifikasis/mark-all-read', [NotifikasiApiController::class, 'markAllRead']);
     Route::post('notifikasis/{notifikasi}/mark-read', [NotifikasiApiController::class, 'markRead']);
-    Route::apiResource('notifikasis', NotifikasiApiController::class)->only(['index','show','destroy']);
+    Route::apiResource('notifikasis', NotifikasiApiController::class)->only(['index', 'show', 'destroy']);
 
     // ===== Pembayaran =====
     Route::get('pembayarans/pasien/{user_id}', [PembayaranApiController::class, 'byPatient']);

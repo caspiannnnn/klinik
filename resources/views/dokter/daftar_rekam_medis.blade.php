@@ -9,17 +9,17 @@
     @else
         <div class="bg-white shadow rounded-lg p-6">
             <table class="min-w-full divide-y divide-gray-200 text-sm">
-                <thead class="bg-blue-100 text-blue-800">
+                <thead class="bg-blue-100 text-blue-800 text-center">
                     <tr>
-                        <th class="px-4 py-2 text-left">No</th>
-                        <th class="px-4 py-2 text-left">Nama Pasien</th>
-                        <th class="px-4 py-2 text-left">Diagnosa</th>
-                        <th class="px-4 py-2 text-left">Tindakan</th>
-                        <th class="px-4 py-2 text-left">Catatan</th>
-                        <th class="px-4 py-2 text-left">Tanggal Input</th>
+                        <th class="px-4 py-2">No</th>
+                        <th class="px-4 py-2">Nama Pasien</th>
+                        <th class="px-4 py-2">Diagnosa</th>
+                        <th class="px-4 py-2">Tindakan</th>
+                        <th class="px-4 py-2">Catatan</th>
+                        <th class="px-4 py-2">Tanggal Input</th>
                     </tr>
                 </thead>
-                <tbody class="divide-y divide-gray-200">
+                <tbody class="divide-y divide-gray-200 text-center">
                     @foreach ($rekamMedisList as $index => $rekam)
                         <tr class="hover:bg-gray-50">
                             <td class="px-4 py-2">{{ $index + 1 }}</td>

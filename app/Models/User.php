@@ -27,6 +27,17 @@ class User extends Authenticatable
         'jenis_kelamin',
         'no_hp',
         'nik',
+<<<<<<< HEAD
+=======
+
+        // ✅ FIX: kolom ini ada di migration & dipakai di register
+        'alamat',
+        'telepon',
+
+        // (opsional: kalau nanti kamu tambahkan di migration user)
+        // 'no_rm',
+        // 'qr_path',
+>>>>>>> af9d94b (feat: update clinic app (roles, API, swagger, views))
     ];
 
     protected $hidden = [
@@ -37,7 +48,11 @@ class User extends Authenticatable
     protected $casts = [
         'email_verified_at' => 'datetime',
         'password'          => 'hashed',
+<<<<<<< HEAD
         'tanggal_lahir'     => 'date',   // ✅ TAMBAH INI
+=======
+        'tanggal_lahir'     => 'date',
+>>>>>>> af9d94b (feat: update clinic app (roles, API, swagger, views))
     ];
 
     protected $appends = [

@@ -8,16 +8,16 @@
     <div class="bg-white shadow rounded-lg p-6 mb-10">
         <h2 class="text-lg font-semibold mb-4">Daftar Pasien (Status: Diterima)</h2>
         <table class="min-w-full divide-y divide-gray-200 text-sm">
-            <thead class="bg-blue-100 text-blue-800">
+            <thead class="bg-blue-100 text-blue-800 text-center">
                 <tr>
-                    <th class="px-4 py-2 text-left">No</th>
-                    <th class="px-4 py-2 text-left">Nama Pasien</th>
-                    <th class="px-4 py-2 text-left">Tanggal Lahir</th>
-                    <th class="px-4 py-2 text-left">Jenis Kelamin</th>
-                    <th class="px-4 py-2 text-center">Aksi</th>
+                    <th class="px-4 py-2">No</th>
+                    <th class="px-4 py-2">Nama Pasien</th>
+                    <th class="px-4 py-2">Tanggal Lahir</th>
+                    <th class="px-4 py-2">Jenis Kelamin</th>
+                    <th class="px-4 py-2">Aksi</th>
                 </tr>
             </thead>
-            <tbody class="divide-y divide-gray-200">
+            <tbody class="divide-y divide-gray-200 text-center">
                 @foreach($pendaftars as $index => $pendaftar)
                     <tr class="hover:bg-gray-50">
                         <td class="px-4 py-2">{{ $index + 1 }}</td>

@@ -101,6 +101,16 @@ Route::middleware('auth')->group(function () {
 
     /*
     |--------------------------------------------------------------------------
+    | ✅ FIX PENTING:
+    | Route scan pasien HARUS DI LUAR role:pasien
+    | Supaya dokter/resepsionis/admin bisa akses setelah scan/upload QR
+    |--------------------------------------------------------------------------
+    */
+    Route::get('/scan/pasien/{token}', [PasienController::class, 'scan'])
+        ->name('pasien.scan');
+
+    /*
+    |--------------------------------------------------------------------------
     | Pasien - Umum (hanya pasien)
     |--------------------------------------------------------------------------
     */
@@ -159,11 +169,10 @@ Route::middleware('auth')->group(function () {
 
         /*
         |--------------------------------------------------------------------------
-        | Kartu Pasien & Scan
+        | Kartu Pasien
         |--------------------------------------------------------------------------
         */
         Route::get('/kartu-pasien', [PasienController::class, 'kartu'])->name('pasien.kartu');
-        Route::get('/scan/pasien/{token}', [PasienController::class, 'scan'])->name('pasien.scan');
     });
 
     /*
@@ -234,7 +243,7 @@ Route::middleware('auth')->group(function () {
         Route::get('/pembayaran/create', [AdminPembayaranController::class, 'create'])->name('admin.pembayaran.create');
         Route::post('/pembayaran', [AdminPembayaranController::class, 'store'])->name('admin.pembayaran.store');
 
-        // Pembayaran - Konfirmasi
+        // Konfirmasi pembayaran
         Route::get('/pembayaran/konfirmasi', [AdminPembayaranController::class, 'konfirmasi'])->name('admin.pembayaran.konfirmasi');
         Route::post('/pembayaran/konfirmasi/{id}/update', [AdminPembayaranController::class, 'updateStatus'])->name('admin.pembayaran.konfirmasi.update');
 

@@ -23,18 +23,26 @@
         <div class="font-semibold">{{ $user->telepon ?? $user->no_hp ?? '-' }}</div>
 
         <div class="text-gray-500 text-xs mt-2">Alamat</div>
-        <div class="font-semibold">{{ $user->alamat ?? '-' }}</div>
+        <div class="font-semibold">
+          {{ $user->alamat ?? $user->address ?? $user->alamat_lengkap ?? '-' }}
+        </div>
       </div>
 
       <div class="flex items-center justify-center">
         @if($user->qr_url)
-          <img src="{{ $user->qr_url }}" alt="QR Pasien" class="w-32 h-32">
+          <img id="qrImage" src="{{ $user->qr_url }}" alt="QR Pasien" class="w-32 h-32" crossorigin="anonymous">
         @endif
       </div>
     </div>
 
     <div class="mt-6 flex items-center justify-between no-print">
-      <a href="{{ $user->qr_url }}" download class="text-sm text-blue-600 underline">Unduh QR</a>
+      {{-- ✅ Unduh jadi PNG (bukan SVG) --}}
+      <a href="#"
+         id="downloadQrPng"
+         class="text-sm text-blue-600 underline">
+        Unduh QR
+      </a>
+
       <button onclick="window.print()" class="text-sm px-3 py-1 rounded bg-blue-600 text-white">Cetak</button>
     </div>
   </div>
@@ -69,4 +77,52 @@
     }
   }
 </style>
+
+<script>
+(function () {
+  const btn = document.getElementById('downloadQrPng');
+  const img = document.getElementById('qrImage');
+  if (!btn || !img) return;
+
+  function downloadDataUrl(dataUrl, filename) {
+    const a = document.createElement('a');
+    a.href = dataUrl;
+    a.download = filename;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+  }
+
+  btn.addEventListener('click', async function (e) {
+    e.preventDefault();
+
+    // Pastikan gambar sudah ke-load
+    if (!img.complete) {
+      await new Promise(resolve => img.addEventListener('load', resolve, { once: true }));
+    }
+
+    const canvas = document.createElement('canvas');
+    const w = img.naturalWidth || 256;
+    const h = img.naturalHeight || 256;
+    canvas.width = w;
+    canvas.height = h;
+
+    const ctx = canvas.getContext('2d');
+    // background putih biar QR bersih
+    ctx.fillStyle = '#ffffff';
+    ctx.fillRect(0, 0, w, h);
+
+    try {
+      ctx.drawImage(img, 0, 0, w, h);
+      const dataUrl = canvas.toDataURL('image/png');
+      const filename = `qr-pasien-{{ $user->username ?? $user->id }}.png`;
+      downloadDataUrl(dataUrl, filename);
+    } catch (err) {
+      // Kalau server tidak mengizinkan canvas membaca SVG cross-origin
+      alert('Gagal mengunduh PNG. Pastikan file QR bisa diakses (storage:link) dan bukan blocked oleh browser.');
+      console.error(err);
+    }
+  });
+})();
+</script>
 @endsection
