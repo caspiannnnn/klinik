@@ -28,14 +28,13 @@
                                 @csrf
                                 @method('PUT')
                                 <select name="status" onchange="this.form.submit()" class="text-xs rounded-full px-2 py-1 bg-gray-100 text-gray-700 focus:outline-none">
-                                    <option value="Menunggu" {{ $p->status == 'Menunggu' ? 'selected' : '' }}>Menunggu</option>
-                                    <option value="Diterima" {{ $p->status == 'Diterima' ? 'selected' : '' }}>Diterima</option>
-                                    <option value="Ditolak" {{ $p->status == 'Ditolak' ? 'selected' : '' }}>Ditolak</option>
+                                    <option value="diterima" {{ $p->status == 'diterima' ? 'selected' : '' }}>Diterima</option>
+                                    <option value="ditolak" {{ $p->status == 'ditolak' ? 'selected' : '' }}>Ditolak</option>
                                 </select>
                             </form>
                         </td>
                         <td class="px-4 py-2 text-center">
-                            <a href="{{ route('resepsionis.pendaftaran.index') }}" class="text-blue-600 hover:underline text-sm">Lihat Detail</a>
+                            <a href="{{ route('dokter.rekam_medis.show', $p->id) }}" class="text-blue-600 hover:underline text-sm">Input Rekam Medis</a>
                         </td>
                     </tr>
                 @empty

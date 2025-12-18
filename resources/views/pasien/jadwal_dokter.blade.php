@@ -6,8 +6,10 @@
     <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         @forelse ($jadwals as $jadwal)
             <div class="bg-white p-6 rounded-lg shadow-md border">
-                <h2 class="text-xl font-semibold text-gray-800 mb-2">{{ $jadwal->dokter->name ?? 'Nama Dokter' }}</h2>
-                <p class="text-gray-600">Spesialis: {{ $jadwal->dokter->spesialis ?? '-' }}</p>
+                <h2 class="text-xl font-semibold text-gray-800 mb-2">
+                    {{ ($jadwal->dokter && ($jadwal->dokter->role ?? null) === 'dokter') ? $jadwal->dokter->name : 'Nama Dokter' }}
+                </h2>
+                <p class="text-gray-600">Spesialis: {{ ($jadwal->dokter && ($jadwal->dokter->role ?? null) === 'dokter') ? ($jadwal->dokter->spesialis ?? '-') : '-' }}</p>
                 <p class="text-gray-600">Hari: {{ ucfirst($jadwal->hari) }}</p>
                 <p class="text-gray-600">Waktu: {{ \Carbon\Carbon::parse($jadwal->jam_mulai)->format('H:i') }} - {{ \Carbon\Carbon::parse($jadwal->jam_selesai)->format('H:i') }}</p>
                 {{-- <div class="mt-4">
@@ -21,4 +23,3 @@
         @endforelse
     </div>
 @endsection
-  

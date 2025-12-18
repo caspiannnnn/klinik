@@ -30,14 +30,14 @@ class PembayaranPasienController extends Controller
             ->firstOrFail();
 
         /**
-         * SIMPAN KE PRIVATE (ANTI 403)
+         * SIMPAN KE PRIVATE DI DISK LOCAL (ANTI 403)
          * lokasi fisik: storage/app/private/bukti_pembayaran/xxxxx.png
          * catatan: ini bukan public, jadi gak bisa diakses langsung dari URL
          */
-        $path = $request->file('bukti_pembayaran')->store('bukti_pembayaran', 'private');
+        $path = $request->file('bukti_pembayaran')->store('private/bukti_pembayaran', 'local');
 
         $pembayaran->update([
-            'bukti_pembayaran' => $path, // contoh: bukti_pembayaran/xxx.png
+            'bukti_pembayaran' => $path, // contoh: private/bukti_pembayaran/xxx.png
             'status' => 'menunggu konfirmasi',
         ]);
 
@@ -69,49 +69,39 @@ class PembayaranPasienController extends Controller
 
         $raw = trim((string) $pembayaran->bukti_pembayaran);
 
-        // kandidat path yang mungkin (private & public legacy)
-        $candidatesPrivate = [];
-        $candidatesPublic  = [];
-
         // buang domain kalau tersimpan full url
         $raw = preg_replace('#^https?://[^/]+/#', '', $raw);
         $raw = ltrim($raw, '/');
 
-        // 1) kalau sudah path
-        $candidatesPrivate[] = $raw;
-        $candidatesPublic[]  = $raw;
+        $candidatesLocal = [];
+        $candidatesPublic = [];
+
+        // 1) path apa adanya
+        $candidatesLocal[] = $raw;
+        $candidatesPublic[] = $raw;
 
         // 2) kalau cuma nama file
         if (!str_contains($raw, '/')) {
-            // private standar baru
-            $candidatesPrivate[] = 'bukti_pembayaran/' . $raw;
-
-            // public legacy
-            $candidatesPublic[]  = 'uploads/bukti/' . $raw;
-            $candidatesPublic[]  = 'uploads/bukti_pembayaran/' . $raw;
+            $candidatesLocal[]  = 'private/bukti_pembayaran/' . $raw;   // format baru fix
+            $candidatesPublic[] = 'uploads/bukti/' . $raw;              // legacy
+            $candidatesPublic[] = 'uploads/bukti_pembayaran/' . $raw;   // legacy lain
         }
 
-        // 3) normalisasi prefix legacy
-        $clean = $raw;
-        $clean = preg_replace('#^storage/#', '', $clean);
-        $clean = preg_replace('#^public/#', '', $clean);
-        $clean = preg_replace('#^bukti_pembayaran/#', 'bukti_pembayaran/', $clean);
-        $clean = preg_replace('#^uploads/bukti_pembayaran/#', 'uploads/bukti/', $clean);
-        $clean = ltrim($clean, '/');
-
-        $candidatesPrivate[] = $clean;
-        $candidatesPublic[]  = $clean;
+        // 3) normalisasi: kalau data lama tersimpan tanpa "private/"
+        if (str_starts_with($raw, 'bukti_pembayaran/')) {
+            $candidatesLocal[] = 'private/' . $raw; // private/bukti_pembayaran/xxx.png
+        }
 
         // dedupe
-        $candidatesPrivate = array_values(array_unique(array_filter($candidatesPrivate)));
-        $candidatesPublic  = array_values(array_unique(array_filter($candidatesPublic)));
+        $candidatesLocal = array_values(array_unique(array_filter($candidatesLocal)));
+        $candidatesPublic = array_values(array_unique(array_filter($candidatesPublic)));
 
-        // CARI DI DISK PRIVATE DULU (yang baru)
-        foreach ($candidatesPrivate as $path) {
-            if (Storage::disk('private')->exists($path)) {
-                $mime = Storage::disk('private')->mimeType($path) ?: 'application/octet-stream';
+        // ✅ CARI DI DISK LOCAL (storage/app/...) DULU
+        foreach ($candidatesLocal as $path) {
+            if (Storage::disk('local')->exists($path)) {
+                $mime = Storage::disk('local')->mimeType($path) ?: 'application/octet-stream';
 
-                return Storage::disk('private')->response($path, null, [
+                return Storage::disk('local')->response($path, null, [
                     'Content-Type'  => $mime,
                     'Cache-Control' => 'no-store, no-cache, must-revalidate, max-age=0',
                     'Pragma'        => 'no-cache',
@@ -121,7 +111,7 @@ class PembayaranPasienController extends Controller
             }
         }
 
-        // FALLBACK: CARI DI PUBLIC (legacy upload lama)
+        // FALLBACK: CARI DI PUBLIC (legacy)
         foreach ($candidatesPublic as $path) {
             if (Storage::disk('public')->exists($path)) {
                 $mime = Storage::disk('public')->mimeType($path) ?: 'application/octet-stream';

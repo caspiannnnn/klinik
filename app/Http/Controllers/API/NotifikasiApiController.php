@@ -6,7 +6,6 @@ use App\Http\Controllers\Controller;
 use App\Models\Notifikasi;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
-use Illuminate\Database\QueryException;
 use Illuminate\Support\Facades\Schema;
 use OpenApi\Annotations as OA;
 
@@ -37,7 +36,6 @@ class NotifikasiApiController extends Controller
 
         $query = Notifikasi::query();
 
-        // Filter by user_id jika ada kolom user_id
         if ($user && Schema::hasColumn($table, 'user_id')) {
             $query->where('user_id', $user->id);
         }
@@ -62,11 +60,11 @@ class NotifikasiApiController extends Controller
 
     /**
      * @OA\Get(
-     *     path="/api/notifikasis/{id}",
+     *     path="/api/notifikasis/{notifikasi}",
      *     tags={"Notifikasi"},
      *     summary="Detail notifikasi",
      *     security={{"sanctum":{}}},
-     *     @OA\Parameter(name="id", in="path", required=true, @OA\Schema(type="integer")),
+     *     @OA\Parameter(name="notifikasi", in="path", required=true, @OA\Schema(type="integer")),
      *     @OA\Response(response=200, description="OK"),
      *     @OA\Response(response=404, description="Not Found")
      * )
@@ -81,28 +79,27 @@ class NotifikasiApiController extends Controller
 
     /**
      * @OA\Delete(
-     *     path="/api/notifikasis/{id}",
+     *     path="/api/notifikasis/{notifikasi}",
      *     tags={"Notifikasi"},
      *     summary="Hapus notifikasi",
      *     security={{"sanctum":{}}},
-     *     @OA\Parameter(name="id", in="path", required=true, @OA\Schema(type="integer")),
+     *     @OA\Parameter(name="notifikasi", in="path", required=true, @OA\Schema(type="integer")),
      *     @OA\Response(response=204, description="No Content")
      * )
      */
     public function destroy(Notifikasi $notifikasi)
     {
         $notifikasi->delete();
-
         return response()->json(null, Response::HTTP_NO_CONTENT);
     }
 
     /**
      * @OA\Post(
-     *     path="/api/notifikasis/{id}/mark-read",
+     *     path="/api/notifikasis/{notifikasi}/mark-read",
      *     tags={"Notifikasi"},
      *     summary="Tandai satu notifikasi sebagai sudah dibaca (jika ada kolom read_at / is_read)",
      *     security={{"sanctum":{}}},
-     *     @OA\Parameter(name="id", in="path", required=true, @OA\Schema(type="integer")),
+     *     @OA\Parameter(name="notifikasi", in="path", required=true, @OA\Schema(type="integer")),
      *     @OA\Response(response=200, description="OK")
      * )
      */

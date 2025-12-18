@@ -2,19 +2,25 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\Pendaftaran;
 use App\Models\User;
-use App\Models\Pembayaran;
+use Illuminate\Support\Facades\DB;
 
 class AdminDashboardController extends Controller
 {
     public function index()
     {
-        return view('admin.index', [
-            'totalPasien' => Pendaftaran::count(),
-            'totalDokter' => User::where('role', 'dokter')->count(),
-            'totalResepsionis' => User::where('role', 'resepsionis')->count(),
-            'totalKeuangan' => Pembayaran::where('status', 'lunas')->sum('jumlah'),
-        ]);
+        $totalPasien = User::where('role', 'pasien')->count();
+        $totalDokter = User::where('role', 'dokter')->count();
+        $totalResepsionis = User::where('role', 'resepsionis')->count();
+
+        // ✅ Kolom uang: jumlah
+        $totalKeuangan = (int) DB::table('pembayarans')->sum('jumlah');
+
+        return view('admin.index', compact(
+            'totalPasien',
+            'totalDokter',
+            'totalResepsionis',
+            'totalKeuangan'
+        ));
     }
 }

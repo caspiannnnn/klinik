@@ -8,17 +8,17 @@
         <p class="text-gray-600">Belum ada data pendaftaran.</p>
     @else
     <table class="min-w-full bg-white shadow rounded">
-        <thead class="bg-blue-600 text-white">
+        <thead class="bg-blue-600 text-white text-center">
             <tr>
-                <th class="py-3 px-4 text-left">#</th>
-                <th class="py-3 px-4 text-left">Nama Pasien</th>
-                <th class="py-3 px-4 text-left">Tanggal Daftar</th>
-                <th class="py-3 px-4 text-left">Aksi</th>
+                <th class="py-3 px-4">#</th>
+                <th class="py-3 px-4">Nama Pasien</th>
+                <th class="py-3 px-4">Tanggal Daftar</th>
+                <th class="py-3 px-4">Aksi</th>
             </tr>
         </thead>
         <tbody>
             @foreach ($pendaftarans as $pendaftaran)
-                <tr class="border-b hover:bg-gray-100">
+                <tr class="border-b hover:bg-gray-100 text-center">
                     <td class="py-2 px-4">{{ $loop->iteration }}</td>
                     <td class="py-2 px-4">{{ $pendaftaran->nama ?? optional($pendaftaran->user)->name }}</td>
                     <td class="py-2 px-4">{{ optional($pendaftaran->created_at)->format('d M Y H:i') }}</td>

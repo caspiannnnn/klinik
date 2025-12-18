@@ -28,18 +28,26 @@ class AdminPasienController extends Controller
     public function store(Request $request)
     {
         $request->validate([
-            'nama'     => 'required|string|max:255',
-            'email'    => 'required|email|unique:users,email',
-            'username' => 'required|string|max:50|unique:users,username',
-            'password' => 'required|string|min:6',
+            'nama' => ['required', 'string', 'max:255'],
+            'username' => ['required', 'string', 'max:255', 'unique:users,username'],
+            'email' => ['required', 'email', 'max:255', 'unique:users,email'],
+            'tanggal_lahir' => ['required', 'date'],
+            'jenis_kelamin' => ['required', 'in:Laki-laki,Perempuan'],
+            'no_hp' => ['required', 'regex:/^[0-9]{9,15}$/'],
+            'nik' => ['required', 'regex:/^[0-9]{16}$/', 'unique:users,nik'],
+            'password' => ['required', 'string', 'min:6'],
         ]);
 
         User::create([
-            'name'     => $request->nama,
-            'email'    => $request->email,
+            'name' => $request->nama,
             'username' => $request->username,
+            'email' => $request->email,
+            'role' => 'pasien',
+            'tanggal_lahir' => $request->tanggal_lahir,
+            'jenis_kelamin' => $request->jenis_kelamin,
+            'no_hp' => $request->no_hp,
+            'nik' => $request->nik,
             'password' => Hash::make($request->password),
-            'role'     => 'pasien',
         ]);
 
         return redirect()->route('admin.pasien.index')->with('success', 'Pasien berhasil ditambahkan.');
@@ -58,15 +66,28 @@ class AdminPasienController extends Controller
         $pasien = User::where('role', 'pasien')->findOrFail($id);
 
         $request->validate([
-            'nama'     => 'required|string|max:255',
-            'email'    => 'required|email|unique:users,email,' . $pasien->id,
-            'username' => 'required|string|max:50|unique:users,username,' . $pasien->id,
-            'password' => 'nullable|string|min:6',
+            'nama'          => 'required|string|max:255',
+            'email'         => 'required|email|unique:users,email,' . $pasien->id,
+            'username'      => 'required|string|max:50|unique:users,username,' . $pasien->id,
+
+            // ✅ TAMBAH VALIDASI INI
+            'tanggal_lahir' => 'required|date',
+            'jenis_kelamin' => 'required|in:Laki-laki,Perempuan',
+            'no_hp'         => ['required', 'regex:/^[0-9]{9,15}$/'],
+            'nik'           => ['required', 'regex:/^[0-9]{16}$/', 'unique:users,nik,' . $pasien->id],
+
+            'password'      => 'nullable|string|min:6',
         ]);
 
         $pasien->name = $request->nama;
         $pasien->email = $request->email;
         $pasien->username = $request->username;
+
+        // ✅ UPDATE FIELD TAMBAHAN
+        $pasien->tanggal_lahir = $request->tanggal_lahir;
+        $pasien->jenis_kelamin = $request->jenis_kelamin;
+        $pasien->no_hp = $request->no_hp;
+        $pasien->nik = $request->nik;
 
         // Password opsional: update hanya jika diisi
         if ($request->filled('password')) {

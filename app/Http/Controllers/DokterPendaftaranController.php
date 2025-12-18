@@ -2,61 +2,52 @@
 
 namespace App\Http\Controllers;
 
-use Illuminate\Http\Request;
 use App\Models\Pendaftaran;
 use App\Models\Notifikasi;
+use Illuminate\Http\Request;
 
 class DokterPendaftaranController extends Controller
 {
     public function index()
     {
-        // Biar dokter tidak lihat data yang "ngacak", kita tampilkan yang relevan dulu.
-        // Kalau kamu mau semua, ganti ->whereIn(...) jadi ->latest()
-        $pendaftars = Pendaftaran::whereIn('status', ['Menunggu', 'Diterima'])
-            ->latest()
-            ->get();
+        // kamu bisa pakai ->hariIni() kalau mau yang hari ini saja
+        $pendaftars = Pendaftaran::orderBy('created_at', 'desc')->get();
 
         return view('dokter.pendaftar', compact('pendaftars'));
     }
 
     public function show($id)
     {
-        $pendaftar = Pendaftaran::findOrFail($id);
-        return view('dokter.pendaftar.show', compact('pendaftar'));
+        $pendaftar = Pendaftaran::with('user')->findOrFail($id);
+        return view('dokter.pendaftaran.show', compact('pendaftar'));
     }
 
     public function updateStatus(Request $request, $id)
     {
         $request->validate([
-            'status' => 'required|in:Menunggu,Diterima,Ditolak',
+            'status' => 'required|in:menunggu,datang,selesai',
         ]);
 
-        $pendaftar = Pendaftaran::findOrFail($id);
+        $p = Pendaftaran::findOrFail($id);
+        $old = (string) $p->status;
+        $new = (string) $request->status;
 
-        // simpan status lama untuk pesan notifikasi
-        $oldStatus = $pendaftar->status;
+        $p->update([
+            'status' => $new,
+        ]);
 
-        $pendaftar->status = $request->status;
-        $pendaftar->save();
-
-        // ✅ Buat notifikasi untuk pasien terkait (kalau ada user_id)
-        if (!empty($pendaftar->user_id)) {
-            $judul = 'Status Pendaftaran Diperbarui';
-
-            // pesan dibuat jelas + informatif
-            $pesan = "Status pendaftaran Anda berubah dari {$oldStatus} menjadi {$pendaftar->status}.";
-
+        // notif ke pasien kalau status berubah
+        if ($p->user_id && strtolower($old) !== strtolower($new)) {
             Notifikasi::create([
-                'user_id' => $pendaftar->user_id,
-                'judul'   => $judul,
-                'pesan'   => $pesan,
+                'user_id' => $p->user_id,
+                'judul'   => 'Status Pendaftaran',
+                'pesan'   => 'Status pendaftaran Anda berubah dari "' . $old . '" menjadi "' . $new . '".',
                 'tipe'    => 'pendaftaran',
-                // kamu bisa arahkan ke halaman kartu pasien atau pendaftaran sukses/riwayat
-                'link'    => route('pasien.kartu'),
+                'link'    => route('pasien.notifikasi'),
                 'dibaca'  => false,
             ]);
         }
 
-        return back()->with('success', 'Status berhasil diperbarui.');
+        return back();
     }
 }

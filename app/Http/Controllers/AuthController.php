@@ -9,6 +9,9 @@ use App\Models\User;
 
 class AuthController extends Controller
 {
+    // ============================
+    // LOGIN WEB (Blade)
+    // ============================
     public function showLogin()
     {
         return view('auth.login');
@@ -52,6 +55,9 @@ class AuthController extends Controller
             ->onlyInput('email');
     }
 
+    // ============================
+    // REGISTER WEB (Blade)
+    // ============================
     public function register(Request $request)
     {
         $request->validate([
@@ -64,8 +70,6 @@ class AuthController extends Controller
             'jenis_kelamin' => 'required|in:Laki-laki,Perempuan',
             'no_hp'         => 'required|string|max:20',
             'nik'           => 'required|digits:16',
-
-            // ✅ alamat dari form
             'alamat'        => 'required|string|max:255',
         ]);
 
@@ -84,5 +88,43 @@ class AuthController extends Controller
         ]);
 
         return redirect()->route('login.form')->with('success', 'Registrasi berhasil. Silakan login.');
+    }
+
+    // ============================
+    // API LOGIN (Sanctum Token)
+    // ============================
+    public function apiLogin(Request $request)
+    {
+        $request->validate([
+            'email'    => 'required|email',
+            'password' => 'required|string',
+        ]);
+
+        $user = User::where('email', $request->email)->first();
+
+        if (!$user || !Hash::check($request->password, $user->password)) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Email atau password salah',
+            ], 401);
+        }
+
+        // Hapus token lama kalau mau (opsional)
+        // $user->tokens()->delete();
+
+        // Buat Token Sanctum
+        $token = $user->createToken('api-token')->plainTextToken;
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Login berhasil',
+            'token'   => $token,
+            'user'    => [
+                'id'    => $user->id,
+                'name'  => $user->name,
+                'email' => $user->email,
+                'role'  => $user->role,
+            ],
+        ]);
     }
 }

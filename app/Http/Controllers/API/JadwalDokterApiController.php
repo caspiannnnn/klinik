@@ -93,11 +93,11 @@ class JadwalDokterApiController extends Controller
 
     /**
      * @OA\Get(
-     *     path="/api/jadwal-dokter/{id}",
+     *     path="/api/jadwal-dokter/{jadwal_dokter}",
      *     tags={"JadwalDokter"},
      *     summary="Detail jadwal dokter",
      *     security={{"sanctum":{}}},
-     *     @OA\Parameter(name="id", in="path", required=true, @OA\Schema(type="integer")),
+     *     @OA\Parameter(name="jadwal_dokter", in="path", required=true, @OA\Schema(type="integer")),
      *     @OA\Response(response=200, description="OK"),
      *     @OA\Response(response=404, description="Not Found")
      * )
@@ -112,11 +112,11 @@ class JadwalDokterApiController extends Controller
 
     /**
      * @OA\Put(
-     *     path="/api/jadwal-dokter/{id}",
+     *     path="/api/jadwal-dokter/{jadwal_dokter}",
      *     tags={"JadwalDokter"},
      *     summary="Update jadwal dokter",
      *     security={{"sanctum":{}}},
-     *     @OA\Parameter(name="id", in="path", required=true, @OA\Schema(type="integer")),
+     *     @OA\Parameter(name="jadwal_dokter", in="path", required=true, @OA\Schema(type="integer")),
      *     @OA\RequestBody(required=false, @OA\JsonContent()),
      *     @OA\Response(response=200, description="OK"),
      *     @OA\Response(response=422, description="Unprocessable Entity")
@@ -146,18 +146,17 @@ class JadwalDokterApiController extends Controller
 
     /**
      * @OA\Delete(
-     *     path="/api/jadwal-dokter/{id}",
+     *     path="/api/jadwal-dokter/{jadwal_dokter}",
      *     tags={"JadwalDokter"},
      *     summary="Hapus jadwal dokter",
      *     security={{"sanctum":{}}},
-     *     @OA\Parameter(name="id", in="path", required=true, @OA\Schema(type="integer")),
+     *     @OA\Parameter(name="jadwal_dokter", in="path", required=true, @OA\Schema(type="integer")),
      *     @OA\Response(response=204, description="No Content")
      * )
      */
     public function destroy(JadwalDokter $jadwal_dokter)
     {
         $jadwal_dokter->delete();
-
         return response()->json(null, Response::HTTP_NO_CONTENT);
     }
 
@@ -171,7 +170,7 @@ class JadwalDokterApiController extends Controller
      *     @OA\Response(response=200, description="OK")
      * )
      */
-    public function byDoctor($dokterId, Request $request)
+    public function byDoctor($dokter_id, Request $request)
     {
         $model = new JadwalDokter();
         $table = $model->getTable();
@@ -179,7 +178,7 @@ class JadwalDokterApiController extends Controller
         $query = JadwalDokter::query();
 
         if (Schema::hasColumn($table, 'dokter_id')) {
-            $query->where('dokter_id', $dokterId);
+            $query->where('dokter_id', $dokter_id);
         }
 
         $perPage = (int) $request->query('per_page', 15);

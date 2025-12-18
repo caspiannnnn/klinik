@@ -16,12 +16,12 @@ class Pendaftaran extends Model
     protected $fillable = [
         'user_id',
         'nama',
+        'tanggal_lahir',
         'jenis_kelamin',
         'no_hp',
         'nik',
         'keluhan',
         'status',
-        'tanggal_lahir',
         'nomor_urut',
         'kode_antrian',
         'qr_token',
@@ -38,12 +38,18 @@ class Pendaftaran extends Model
 
     public function getQrUrlAttribute(): ?string
     {
-        return $this->qr_path ? asset('storage/'.$this->qr_path) : null;
+        return $this->qr_path ? asset('storage/' . $this->qr_path) : null;
     }
 
     public function user()
     {
         return $this->belongsTo(User::class);
+    }
+
+    // ✅ relasi ke rekam medis
+    public function rekamMedis()
+    {
+        return $this->hasMany(RekamMedis::class, 'pendaftaran_id');
     }
 
     public function scopeHariIni($query)

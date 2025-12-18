@@ -42,14 +42,12 @@ class UserSeeder extends Seeder
         ];
 
         foreach ($users as $u) {
-            // cari berdasarkan email (unik). Kalau sudah ada, update data dasarnya.
             User::updateOrCreate(
                 ['email' => $u['email']],
                 [
                     'name' => $u['name'],
                     'username' => $u['username'],
                     'role' => $u['role'],
-                    // Set password konsisten (akan reset password kalau record sudah ada).
                     'password' => Hash::make($u['password']),
                 ]
             );

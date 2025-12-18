@@ -112,4 +112,18 @@ return [
 
     'password_timeout' => env('AUTH_PASSWORD_TIMEOUT', 10800),
 
+    'guards' => [
+        'web' => ['driver' => 'session', 'provider' => 'users'],
+        'dokter' => ['driver' => 'session', 'provider' => 'dokters'],
+        'pasien' => ['driver' => 'session', 'provider' => 'pasiens'],
+        'resepsionis' => ['driver' => 'session', 'provider' => 'resepsionis'],
+    ],
+
+    'providers' => [
+        'users' => ['driver' => 'eloquent', 'model' => App\Models\User::class],
+        'dokters' => ['driver' => 'eloquent', 'model' => App\Models\Dokter::class],
+        'pasiens' => ['driver' => 'eloquent', 'model' => App\Models\Pasien::class],
+        'resepsionis' => ['driver' => 'eloquent', 'model' => App\Models\Resepsionis::class],
+    ],
+
 ];

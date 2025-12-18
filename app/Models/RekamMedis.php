@@ -24,6 +24,7 @@ class RekamMedis extends Model
         return $this->belongsTo(Pendaftaran::class, 'pendaftaran_id');
     }
 
+    // Asumsi dokter_id mengarah ke users.id (dokter adalah user dengan role dokter)
     public function dokter()
     {
         return $this->belongsTo(User::class, 'dokter_id');

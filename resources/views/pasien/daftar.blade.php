@@ -146,4 +146,53 @@
         </form>
     </div>
 </div>
+
+{{-- ✅ POPUP SUCCESS --}}
+@if (session('success'))
+<div id="successModal" class="fixed inset-0 z-50 flex items-center justify-center">
+    <div class="absolute inset-0 bg-black/50"></div>
+
+    <div class="relative bg-white rounded-lg shadow-xl w-full max-w-md mx-4 p-6">
+        <h2 class="text-xl font-bold text-blue-800 mb-2">✅ Pendaftaran Berhasil!</h2>
+        <p class="text-gray-700 mb-6">{{ session('success') }}</p>
+
+        <div class="text-right">
+            <button
+                type="button"
+                id="closeSuccessModal"
+                class="bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 px-4 rounded">
+                OK
+            </button>
+        </div>
+    </div>
+</div>
+
+<script>
+    (function () {
+        const modal = document.getElementById('successModal');
+        const btn = document.getElementById('closeSuccessModal');
+
+        if (btn && modal) {
+            btn.addEventListener('click', function () {
+                modal.remove();
+            });
+
+            // klik area gelap untuk tutup
+            modal.addEventListener('click', function (e) {
+                if (e.target === modal) {
+                    modal.remove();
+                }
+            });
+
+            // esc untuk tutup
+            document.addEventListener('keydown', function (e) {
+                if (e.key === 'Escape') {
+                    modal.remove();
+                }
+            });
+        }
+    })();
+</script>
+@endif
+
 @endsection

@@ -5,177 +5,178 @@ namespace App\Http\Controllers\Api;
 use App\Http\Controllers\Controller;
 use App\Models\User;
 use Illuminate\Http\Request;
-use Illuminate\Http\Response;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Validation\ValidationException;
-use OpenApi\Annotations as OA;
 
-/**
- * @OA\Tag(
- *     name="Auth",
- *     description="Autentikasi API (login, register, logout)"
- * )
- */
 class AuthApiController extends Controller
 {
     /**
-     * @OA\Post(
-     *     path="/api/auth/login",
-     *     tags={"Auth"},
-     *     summary="Login user dan mendapatkan token API",
-     *     @OA\RequestBody(
-     *         required=true,
-     *         @OA\JsonContent(
-     *             required={"email","password"},
-     *             @OA\Property(property="email", type="string", format="email"),
-     *             @OA\Property(property="password", type="string", format="password")
-     *         )
-     *     ),
-     *     @OA\Response(
-     *         response=200,
-     *         description="Berhasil login"
-     *     ),
-     *     @OA\Response(
-     *         response=422,
-     *         description="Validasi gagal / kredensial salah"
-     *     )
-     * )
+     * REGISTER PASIEN
+     * Route: POST /api/auth/register
+     */
+    public function registerPasien(Request $request)
+    {
+        $validated = $request->validate([
+            'name' => ['required', 'string', 'max:255'],
+            'username' => ['required', 'string', 'max:255', 'unique:users,username'],
+            'email' => ['required', 'email', 'max:255', 'unique:users,email'],
+            'password' => ['required', 'string', 'min:6', 'confirmed'],
+        ]);
+
+        // kalau user kamu punya kolom role, set default pasien
+        $userData = [
+            'name' => $validated['name'],
+            'username' => $validated['username'],
+            'email' => $validated['email'],
+            'password' => Hash::make($validated['password']),
+        ];
+
+        // opsional: kalau ada kolom role di tabel users
+        if (\Schema::hasColumn('users', 'role')) {
+            $userData['role'] = 'pasien';
+        }
+
+        $user = User::create($userData);
+
+        // Buat token supaya Postman enak
+        $token = $user->createToken('api-token')->plainTextToken;
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Register berhasil.',
+            'data' => [
+                'user' => $user,
+                'token' => $token,
+                'token_type' => 'Bearer',
+            ],
+        ], 201);
+    }
+
+    /**
+     * LOGIN
+     * Route: POST /api/auth/login
+     * Body yang diterima fleksibel:
+     * - { "login": "email/username", "password": "..." }
+     * atau
+     * - { "username": "email/username", "password": "..." }  (punya kamu sekarang)
      */
     public function login(Request $request)
     {
-        $credentials = $request->validate([
-            'email'    => ['required', 'email'],
+        $validated = $request->validate([
+            'login' => ['sometimes', 'string'],
+            'username' => ['sometimes', 'string'],
+            'email' => ['sometimes', 'string'],
             'password' => ['required', 'string'],
         ]);
 
-        /** @var \App\Models\User|null $user */
-        $user = User::where('email', $credentials['email'])->first();
+        // ambil identifier dari field yang tersedia
+        $identifier = $validated['login']
+            ?? $validated['username']
+            ?? $validated['email']
+            ?? null;
 
-        if (! $user || ! Hash::check($credentials['password'], $user->password)) {
+        if (!$identifier) {
             throw ValidationException::withMessages([
-                'email' => ['Kredensial tidak valid.'],
+                'login' => ['Field login/username/email wajib diisi.'],
             ]);
         }
 
-        // hapus semua token lama (opsional)
-        if (method_exists($user, 'tokens')) {
-            $user->tokens()->delete();
+        // cari user by email atau username
+        $user = User::where('email', $identifier)
+            ->orWhere('username', $identifier)
+            ->first();
+
+        if (!$user || !Hash::check($validated['password'], $user->password)) {
+            throw ValidationException::withMessages([
+                'login' => ['Email/username atau password salah.'],
+            ]);
         }
+
+        // Optional: hapus token lama biar bersih (boleh kamu hapus kalau nggak mau)
+        // $user->tokens()->delete();
 
         $token = $user->createToken('api-token')->plainTextToken;
 
         return response()->json([
             'success' => true,
             'message' => 'Login berhasil.',
-            'data'    => [
-                'token'      => $token,
+            'data' => [
+                'user' => $user,
+                'token' => $token,
                 'token_type' => 'Bearer',
-                'user'       => $user,
             ],
-        ], Response::HTTP_OK);
+        ], 200);
     }
 
     /**
-     * @OA\Post(
-     *     path="/api/auth/register",
-     *     tags={"Auth"},
-     *     summary="Registrasi pasien baru",
-     *     @OA\RequestBody(
-     *         required=true,
-     *         @OA\JsonContent(
-     *             required={"name","email","password","password_confirmation"},
-     *             @OA\Property(property="name", type="string"),
-     *             @OA\Property(property="email", type="string", format="email"),
-     *             @OA\Property(property="password", type="string", format="password", minLength=8),
-     *             @OA\Property(property="password_confirmation", type="string", format="password", minLength=8)
-     *         )
-     *     ),
-     *     @OA\Response(
-     *         response=201,
-     *         description="Berhasil registrasi"
-     *     ),
-     *     @OA\Response(
-     *         response=422,
-     *         description="Validasi gagal"
-     *     )
-     * )
+     * ME
+     * Route: GET /api/auth/me (auth:sanctum)
      */
-    public function registerPasien(Request $request)
+    public function me(Request $request)
     {
-        $validated = $request->validate([
-            'name'                  => ['required', 'string', 'max:255'],
-            'email'                 => ['required', 'email', 'max:255', 'unique:users,email'],
-            'password'              => ['required', 'string', 'min:8', 'confirmed'],
-        ]);
+        $user = $request->user();
 
-        $user = new User();
-        $user->name     = $validated['name'];
-        $user->email    = $validated['email'];
-        $user->password = Hash::make($validated['password']);
-
-        // Jika model User punya kolom 'role', set default pasien
-        if (in_array('role', $user->getFillable(), true)) {
-            $user->role = 'pasien';
+        if (!$user) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Unauthenticated.',
+            ], 401);
         }
 
-        $user->save();
+        // token string yang dikirim Postman di header Authorization
+        $bearerToken = $request->bearerToken();
 
-        $token = $user->createToken('api-token')->plainTextToken;
+        // info token (id, name, abilities, created_at, last_used_at)
+        $tokenModel = $user->currentAccessToken();
 
         return response()->json([
             'success' => true,
-            'message' => 'Registrasi berhasil.',
-            'data'    => [
-                'token'      => $token,
-                'token_type' => 'Bearer',
-                'user'       => $user,
+            'message' => 'Data user.',
+            'data' => [
+                'user' => $user,
+                // ini hanya akan ada kalau request pakai Authorization: Bearer ...
+                'token' => $bearerToken,
+                'token_meta' => $tokenModel ? [
+                    'id' => $tokenModel->id,
+                    'name' => $tokenModel->name,
+                    'abilities' => $tokenModel->abilities,
+                    'created_at' => optional($tokenModel->created_at)->toDateTimeString(),
+                    'last_used_at' => optional($tokenModel->last_used_at)->toDateTimeString(),
+                ] : null,
             ],
-        ], Response::HTTP_CREATED);
+        ], 200);
     }
 
     /**
-     * @OA\Post(
-     *     path="/api/auth/logout",
-     *     tags={"Auth"},
-     *     summary="Logout dan revoke token saat ini",
-     *     security={{"sanctum":{}}},
-     *     @OA\Response(
-     *         response=200,
-     *         description="Berhasil logout"
-     *     )
-     * )
+     * LOGOUT
+     * Route: POST /api/auth/logout (auth:sanctum)
      */
     public function logout(Request $request)
     {
         $user = $request->user();
 
-        if ($user && method_exists($user, 'currentAccessToken') && $user->currentAccessToken()) {
-            $user->currentAccessToken()->delete();
+        if (!$user) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Unauthenticated.',
+            ], 401);
+        }
+
+        // revoke token yang sedang dipakai request ini
+        $currentToken = $user->currentAccessToken();
+        if ($currentToken) {
+            $currentToken->delete();
+        } else {
+            // fallback: kalau somehow pakai session
+            Auth::logout();
+            $request->session()->invalidate();
+            $request->session()->regenerateToken();
         }
 
         return response()->json([
             'success' => true,
             'message' => 'Logout berhasil.',
-        ]);
-    }
-
-    /**
-     * @OA\Get(
-     *     path="/api/auth/me",
-     *     tags={"Auth"},
-     *     summary="Mendapatkan data user yang sedang login",
-     *     security={{"sanctum":{}}},
-     *     @OA\Response(
-     *         response=200,
-     *         description="Data user"
-     *     )
-     * )
-     */
-    public function me(Request $request)
-    {
-        return response()->json([
-            'success' => true,
-            'data'    => $request->user(),
-        ]);
+        ], 200);
     }
 }

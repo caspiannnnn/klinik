@@ -42,7 +42,7 @@
                                 @if($tagihan->bukti_pembayaran)
                                     <button
                                         type="button"
-                                        onclick="openModal({{ $tagihan->id }})"
+                                        onclick="openModal('{{ route('pembayaran.bukti', $tagihan->id) }}')"
                                         class="text-blue-600 underline hover:text-blue-800 text-sm">
                                         Lihat
                                     </button>
@@ -91,11 +91,11 @@
     </div>
 
     <script>
-        const buktiUrlTemplate = @json(route('pembayaran.bukti', ['id' => '__ID__']));
+        function openModal(url) {
+            // cache buster biar tidak ambil cache lama
+            const finalUrl = url + (url.includes('?') ? '&' : '?') + 't=' + Date.now();
 
-        function openModal(id) {
-            const url = buktiUrlTemplate.replace('__ID__', id);
-            document.getElementById('modalImage').src = url;
+            document.getElementById('modalImage').src = finalUrl;
             document.getElementById('buktiModal').classList.remove('hidden');
         }
 

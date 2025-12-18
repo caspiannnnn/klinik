@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Pembayaran;
 use App\Models\User;
+use App\Models\Notifikasi;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\DB;
@@ -26,7 +27,6 @@ class AdminPembayaranController extends Controller
     public function create()
     {
         // ✅ Ambil user_id pasien yang sudah punya rekam medis valid
-        // Sumber: rekam_medis -> pendaftarans -> user_id
         $eligibleUserIds = DB::table('rekam_medis')
             ->join('pendaftarans', 'rekam_medis.pendaftaran_id', '=', 'pendaftarans.id')
             ->whereNotNull('rekam_medis.diagnosa')
@@ -66,6 +66,7 @@ class AdminPembayaranController extends Controller
      * - kode_tagihan auto-generate
      * - status default otomatis
      * - ✅ validasi: user_id harus pasien yang sudah punya rekam medis valid
+     * - ✅ kirim notifikasi ke pasien
      */
     public function store(Request $request)
     {
@@ -107,12 +108,24 @@ class AdminPembayaranController extends Controller
 
         $kodeTagihan = $prefix . str_pad((string) $nextNumber, 4, '0', STR_PAD_LEFT);
 
-        Pembayaran::create([
+        $pembayaran = Pembayaran::create([
             'user_id'          => $request->user_id,
             'kode_tagihan'     => $kodeTagihan,
             'jumlah'           => $request->jumlah,
-            'status'           => 'belum dibayar', // ✅ default otomatis
+            'status'           => 'belum dibayar',
             'bukti_pembayaran' => null,
+        ]);
+
+        // ✅ NOTIFIKASI: tagihan dibuat
+        Notifikasi::create([
+            'user_id' => $pembayaran->user_id,
+            'judul'   => 'Tagihan Baru',
+            'pesan'   => 'Tagihan baru telah dibuat dengan kode ' . $pembayaran->kode_tagihan .
+                        ' sebesar Rp ' . number_format($pembayaran->jumlah, 0, ',', '.') .
+                        '. Silakan cek menu Tagihan.',
+            'tipe'    => 'pembayaran',
+            'link'    => route('pasien.tagihan'),
+            'dibaca'  => false,
         ]);
 
         return redirect()->route('admin.pembayaran.index')->with('success', 'Tagihan berhasil dibuat.');
@@ -128,6 +141,10 @@ class AdminPembayaranController extends Controller
         return view('admin.pembayaran.konfirmasi', compact('pembayarans'));
     }
 
+    /**
+     * ✅ Update status pembayaran (admin)
+     * ✅ kirim notifikasi ketika status berubah (terutama lunas)
+     */
     public function updateStatus(Request $request, $id)
     {
         $request->validate([
@@ -135,9 +152,36 @@ class AdminPembayaranController extends Controller
         ]);
 
         $pembayaran = Pembayaran::findOrFail($id);
+
+        $oldStatus = (string) $pembayaran->status;
+        $newStatus = (string) $request->status;
+
         $pembayaran->update([
-            'status' => $request->status,
+            'status' => $newStatus,
         ]);
+
+        // ✅ NOTIFIKASI: status berubah (hindari spam kalau status sama)
+        if (strtolower(trim($oldStatus)) !== strtolower(trim($newStatus))) {
+            $judul = 'Status Pembayaran Diperbarui';
+            $pesan = 'Status tagihan ' . $pembayaran->kode_tagihan .
+                     ' berubah dari "' . $oldStatus . '" menjadi "' . $newStatus . '".';
+
+            // khusus lunas, kasih pesan lebih “berhasil”
+            if (strtolower(trim($newStatus)) === 'lunas') {
+                $judul = 'Pembayaran Lunas';
+                $pesan = 'Pembayaran tagihan ' . $pembayaran->kode_tagihan .
+                         ' telah dikonfirmasi LUNAS. Terima kasih.';
+            }
+
+            Notifikasi::create([
+                'user_id' => $pembayaran->user_id,
+                'judul'   => $judul,
+                'pesan'   => $pesan,
+                'tipe'    => 'pembayaran',
+                'link'    => route('pasien.tagihan'),
+                'dibaca'  => false,
+            ]);
+        }
 
         return back()->with('success', 'Status pembayaran berhasil diperbarui.');
     }

@@ -24,7 +24,39 @@ use App\Http\Controllers\ResepsionisQrScanController;
 use App\Http\Controllers\ResepsionisDashboardController;
 use App\Http\Controllers\AdminLaporanController;
 
+use L5Swagger\Http\Controllers\SwaggerController;
+
 use App\Models\Pendaftaran;
+
+/*
+|--------------------------------------------------------------------------
+| Swagger (L5-Swagger) – DI LUAR auth middleware (FIX config NULL)
+|--------------------------------------------------------------------------
+| FIX utama:
+| - defaults('documentation', 'default')
+| - defaults('config', gabungan konfigurasi l5-swagger)
+|
+| Ini mencegah error:
+| Trying to access array offset on null (SwaggerController.php line 96)
+*/
+Route::get('/api/documentation', [SwaggerController::class, 'api'])
+    ->name('l5-swagger.default.api')
+    ->defaults('documentation', 'default')
+    ->defaults('config', array_merge(
+        config('l5-swagger.defaults', []),
+        config('l5-swagger.documentations.default', [])
+    ));
+
+/*
+| Route untuk file json/yaml docs (tetap di luar auth)
+*/
+Route::get('/docs', [SwaggerController::class, 'docs'])
+    ->name('l5-swagger.default.docs')
+    ->defaults('documentation', 'default')
+    ->defaults('config', array_merge(
+        config('l5-swagger.defaults', []),
+        config('l5-swagger.documentations.default', [])
+    ));
 
 /*
 |--------------------------------------------------------------------------
@@ -55,69 +87,92 @@ Route::middleware('auth')->group(function () {
 
     /*
     |--------------------------------------------------------------------------
-    | Role Landing Pages
+    | Role Landing Pages (optional)
     |--------------------------------------------------------------------------
     */
-    Route::get('/dokter', [DokterDashboardController::class, 'index']);
-    Route::get('/pasien', fn () => view('pasien.index'));
+    Route::get('/dokter', [DokterDashboardController::class, 'index'])
+        ->middleware('role:dokter');
 
-    // resepsionis dashboard real-time dari DB
-    Route::get('/resepsionis', [ResepsionisDashboardController::class, 'index']);
+    Route::get('/pasien', fn () => view('pasien.index'))
+        ->middleware('role:pasien');
+
+    Route::get('/resepsionis', [ResepsionisDashboardController::class, 'index'])
+        ->middleware('role:resepsionis');
 
     /*
     |--------------------------------------------------------------------------
-    | Pasien - Umum
+    | Pasien - Umum (hanya pasien)
     |--------------------------------------------------------------------------
     */
-    Route::get('/jadwal-dokter', [DokterJadwalController::class, 'pasienView'])->name('pasien.jadwal');
-    Route::get('/profil', fn () => view('pasien.profile'));
+    Route::middleware('role:pasien')->group(function () {
 
-    // ❗Jangan route langsung ke view, biar data tagihan kebaca dari controller
-    Route::get('/tagihan', [PembayaranPasienController::class, 'index'])->name('pasien.tagihan');
+        Route::get('/jadwal-dokter', [DokterJadwalController::class, 'pasienView'])->name('pasien.jadwal');
+        Route::get('/profil', fn () => view('pasien.profile'));
+
+        // Tagihan (URL utama)
+        Route::get('/tagihan', [PembayaranPasienController::class, 'index'])->name('pasien.tagihan');
+
+        // Alias FIX: supaya /pasien/tagihan tidak 404 (menu lama / link lama)
+        Route::get('/pasien/tagihan', [PembayaranPasienController::class, 'index'])->name('pasien.tagihan.alias');
+
+        /*
+        |--------------------------------------------------------------------------
+        | Pendaftaran Pasien
+        |--------------------------------------------------------------------------
+        */
+        Route::get('/pendaftaran', [PendaftaranController::class, 'create'])->name('pendaftaran.create');
+        Route::post('/pendaftaran', [PendaftaranController::class, 'store'])->name('pendaftaran.store');
+        Route::get('/pendaftaran/sukses/{id}', [PendaftaranController::class, 'success'])->name('pendaftaran.success');
+        Route::get('/pendaftaran/checkin/{token}', [PendaftaranController::class, 'checkin'])->name('pendaftaran.checkin');
+
+        /*
+        |--------------------------------------------------------------------------
+        | Rekam Medis - Pasien
+        |--------------------------------------------------------------------------
+        */
+        Route::get('/rekam-medis', [PasienRekamMedisController::class, 'index'])->name('pasien.rekam_medis');
+
+        /*
+        |--------------------------------------------------------------------------
+        | Notifikasi - Pasien
+        |--------------------------------------------------------------------------
+        */
+        Route::get('/notifikasi', [NotifikasiController::class, 'index'])->name('pasien.notifikasi');
+        Route::post('/notifikasi/{id}/read', [NotifikasiController::class, 'read'])->name('pasien.notifikasi.read');
+        Route::post('/notifikasi/read-all', [NotifikasiController::class, 'readAll'])->name('pasien.notifikasi.readAll');
+
+        /*
+        |--------------------------------------------------------------------------
+        | Stream Bukti Pembayaran (anti 403)
+        |--------------------------------------------------------------------------
+        */
+        Route::get('/pembayaran/bukti/{id}', [PembayaranPasienController::class, 'bukti'])
+            ->name('pembayaran.bukti');
+
+        /*
+        |--------------------------------------------------------------------------
+        | Upload bukti pembayaran
+        |--------------------------------------------------------------------------
+        */
+        Route::post('/pasien/tagihan/upload/{id}', [PembayaranPasienController::class, 'uploadBukti'])
+            ->name('pasien.upload.bukti');
+
+        /*
+        |--------------------------------------------------------------------------
+        | Kartu Pasien & Scan
+        |--------------------------------------------------------------------------
+        */
+        Route::get('/kartu-pasien', [PasienController::class, 'kartu'])->name('pasien.kartu');
+        Route::get('/scan/pasien/{token}', [PasienController::class, 'scan'])->name('pasien.scan');
+    });
 
     /*
     |--------------------------------------------------------------------------
-    | Pendaftaran Pasien (Form, Simpan, QR Success, QR Check-in)
+    | Dokter (hanya dokter)
     |--------------------------------------------------------------------------
     */
-    Route::get('/pendaftaran', [PendaftaranController::class, 'create'])->name('pendaftaran.create');
-    Route::post('/pendaftaran', [PendaftaranController::class, 'store'])->name('pendaftaran.store');
-    Route::get('/pendaftaran/sukses/{id}', [PendaftaranController::class, 'success'])->name('pendaftaran.success');
-    Route::get('/pendaftaran/checkin/{token}', [PendaftaranController::class, 'checkin'])->name('pendaftaran.checkin');
+    Route::middleware('role:dokter')->prefix('dokter')->group(function () {
 
-    /*
-    |--------------------------------------------------------------------------
-    | Rekam Medis - Pasien
-    |--------------------------------------------------------------------------
-    */
-    Route::get('/rekam-medis', [PasienRekamMedisController::class, 'index'])->name('pasien.rekam_medis');
-
-    /*
-    |--------------------------------------------------------------------------
-    | Notifikasi - Pasien
-    |--------------------------------------------------------------------------
-    */
-    Route::get('/notifikasi', [NotifikasiController::class, 'index'])->name('pasien.notifikasi');
-    Route::post('/notifikasi/{id}/read', [NotifikasiController::class, 'read'])->name('pasien.notifikasi.read');
-    Route::post('/notifikasi/read-all', [NotifikasiController::class, 'readAll'])->name('pasien.notifikasi.readAll');
-
-    /*
-    |--------------------------------------------------------------------------
-    | ✅ 1 PINTU: STREAM BUKTI PEMBAYARAN (ANTI 403)
-    |--------------------------------------------------------------------------
-    | - Pasien hanya bisa lihat miliknya.
-    | - Admin bisa lihat semua.
-    | (logic ada di PembayaranPasienController@bukti)
-    */
-    Route::get('/pembayaran/bukti/{id}', [PembayaranPasienController::class, 'bukti'])
-        ->name('pembayaran.bukti');
-
-    /*
-    |--------------------------------------------------------------------------
-    | Dokter
-    |--------------------------------------------------------------------------
-    */
-    Route::prefix('dokter')->group(function () {
         Route::get('/jadwal', [DokterJadwalController::class, 'index'])->name('dokter.jadwal.index');
         Route::post('/jadwal', [DokterJadwalController::class, 'store'])->name('dokter.jadwal.store');
         Route::delete('/jadwal/{id}', [DokterJadwalController::class, 'destroy'])->name('dokter.jadwal.destroy');
@@ -130,20 +185,24 @@ Route::middleware('auth')->group(function () {
 
         Route::get('/rekam_medis/{id}', [DokterRekamMedisController::class, 'show'])->name('dokter.rekam_medis.show');
         Route::post('/rekam_medis/{id}', [DokterRekamMedisController::class, 'store'])->name('dokter.rekam_medis.store');
-    });
 
-    // Data pasien diterima (view sederhana)
-    Route::get('/dokter/pasien', function () {
-        $pendaftars = Pendaftaran::where('status', 'Diterima')->get();
-        return view('dokter.data_pasien', compact('pendaftars'));
+        // Data pasien yang sudah “datang”
+        Route::get('/pasien', function () {
+            $pendaftars = Pendaftaran::where('status', Pendaftaran::STATUS_DATANG)
+                ->orderBy('created_at', 'desc')
+                ->get();
+
+            return view('dokter.data_pasien', compact('pendaftars'));
+        })->name('dokter.data_pasien');
     });
 
     /*
     |--------------------------------------------------------------------------
-    | Admin
+    | Admin (hanya admin)
     |--------------------------------------------------------------------------
     */
-    Route::prefix('admin')->group(function () {
+    Route::middleware('role:admin')->prefix('admin')->group(function () {
+
         Route::get('/', [AdminDashboardController::class, 'index'])->name('admin.dashboard');
 
         // Dokter
@@ -185,10 +244,11 @@ Route::middleware('auth')->group(function () {
 
     /*
     |--------------------------------------------------------------------------
-    | Resepsionis
+    | Resepsionis (hanya resepsionis)
     |--------------------------------------------------------------------------
     */
-    Route::prefix('resepsionis')->group(function () {
+    Route::middleware('role:resepsionis')->prefix('resepsionis')->group(function () {
+
         Route::get('/daftar-pasien', [ResepsionisPasienController::class, 'create'])->name('resepsionis.daftar');
         Route::post('/daftar-pasien', [ResepsionisPasienController::class, 'store'])->name('resepsionis.daftar.store');
 
@@ -198,20 +258,4 @@ Route::middleware('auth')->group(function () {
         Route::get('/qr-scan', [ResepsionisQrScanController::class, 'index'])->name('resepsionis.qr_scan');
         Route::post('/qr-scan', [ResepsionisQrScanController::class, 'process'])->name('resepsionis.qr_scan.process');
     });
-
-    /*
-    |--------------------------------------------------------------------------
-    | Pembayaran - Pasien
-    |--------------------------------------------------------------------------
-    */
-    Route::post('/pasien/tagihan/upload/{id}', [PembayaranPasienController::class, 'uploadBukti'])
-        ->name('pasien.upload.bukti');
-
-    /*
-    |--------------------------------------------------------------------------
-    | Kartu Pasien & Scan
-    |--------------------------------------------------------------------------
-    */
-    Route::get('/kartu-pasien', [PasienController::class, 'kartu'])->name('pasien.kartu');
-    Route::get('/scan/pasien/{token}', [PasienController::class, 'scan'])->name('pasien.scan');
 });

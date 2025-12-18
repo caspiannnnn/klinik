@@ -26,6 +26,57 @@
             @error('email') <p class="text-red-500 text-xs mt-1">{{ $message }}</p> @enderror
         </div>
 
+        {{-- Tanggal Lahir --}}
+        <div class="mb-4">
+            <label for="tanggal_lahir" class="block text-gray-700 font-bold mb-2">Tanggal Lahir</label>
+            <input type="date" name="tanggal_lahir" id="tanggal_lahir" value="{{ old('tanggal_lahir', $pasien->tanggal_lahir ? \Carbon\Carbon::parse($pasien->tanggal_lahir)->format('Y-m-d') : '') }}" required class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline">
+            @error('tanggal_lahir') <p class="text-red-500 text-xs mt-1">{{ $message }}</p> @enderror
+        </div>
+
+        {{-- Jenis Kelamin --}}
+        <div class="mb-4">
+            <label for="jenis_kelamin" class="block text-gray-700 font-bold mb-2">Jenis Kelamin</label>
+            <select name="jenis_kelamin" id="jenis_kelamin" required class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline">
+                <option value="" disabled {{ old('jenis_kelamin', $pasien->jenis_kelamin) ? '' : 'selected' }}>-- Pilih Jenis Kelamin --</option>
+                <option value="Laki-laki" {{ old('jenis_kelamin', $pasien->jenis_kelamin) === 'Laki-laki' ? 'selected' : '' }}>Laki-laki</option>
+                <option value="Perempuan" {{ old('jenis_kelamin', $pasien->jenis_kelamin) === 'Perempuan' ? 'selected' : '' }}>Perempuan</option>
+            </select>
+            @error('jenis_kelamin') <p class="text-red-500 text-xs mt-1">{{ $message }}</p> @enderror
+        </div>
+
+        {{-- No HP --}}
+        <div class="mb-4">
+            <label for="no_hp" class="block text-gray-700 font-bold mb-2">Nomor HP</label>
+            <input
+                type="text"
+                name="no_hp"
+                id="no_hp"
+                value="{{ old('no_hp', $pasien->no_hp ?? $pasien->telepon ?? '') }}"
+                required
+                inputmode="numeric"
+                pattern="^[0-9]{9,15}$"
+                autocomplete="tel"
+                class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
+                placeholder="08xxxxxxxxxx">
+            @error('no_hp') <p class="text-red-500 text-xs mt-1">{{ $message }}</p> @enderror
+        </div>
+
+        {{-- NIK --}}
+        <div class="mb-4">
+            <label for="nik" class="block text-gray-700 font-bold mb-2">NIK</label>
+            <input
+                type="text"
+                name="nik"
+                id="nik"
+                value="{{ old('nik', $pasien->nik ?? '') }}"
+                required
+                inputmode="numeric"
+                pattern="^[0-9]{16}$"
+                class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
+                placeholder="16 digit NIK">
+            @error('nik') <p class="text-red-500 text-xs mt-1">{{ $message }}</p> @enderror
+        </div>
+
         <div class="mb-6">
             <label for="password" class="block text-gray-700 font-bold mb-2">Password</label>
             <input type="password" name="password" id="password" placeholder="Kosongkan jika tidak ingin mengubah password" class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline">

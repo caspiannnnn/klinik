@@ -10,10 +10,6 @@ use Illuminate\Support\Facades\Auth;
 
 class DokterRekamMedisController extends Controller
 {
-    /**
-     * Tampilkan daftar semua rekam medis yang sudah diinput dokter
-     * (untuk halaman: /dokter/daftar-rekam-medis)
-     */
     public function index()
     {
         $rekamMedisList = RekamMedis::with(['pendaftaran', 'dokter'])
@@ -23,9 +19,6 @@ class DokterRekamMedisController extends Controller
         return view('dokter.daftar_rekam_medis', compact('rekamMedisList'));
     }
 
-    /**
-     * Tampilkan form/halaman input rekam medis untuk satu pendaftaran
-     */
     public function show($id)
     {
         $pendaftaran = Pendaftaran::with('user')->findOrFail($id);
@@ -38,9 +31,6 @@ class DokterRekamMedisController extends Controller
         return view('dokter.rekam_medis', compact('pendaftaran', 'rekamTerakhir'));
     }
 
-    /**
-     * Simpan rekam medis untuk pendaftaran tertentu
-     */
     public function store(Request $request, $id)
     {
         $request->validate([
@@ -59,7 +49,12 @@ class DokterRekamMedisController extends Controller
             'catatan'        => $request->catatan,
         ]);
 
-        // ✅ Notifikasi ke pasien (berdasarkan user_id dari pendaftaran)
+        // ✅ set selesai (nyambung dengan model Pendaftaran)
+        $pendaftaran->update([
+            'status' => Pendaftaran::STATUS_SELESAI,
+        ]);
+
+        // ✅ Notifikasi ke pasien
         if (!empty($pendaftaran->user_id)) {
             Notifikasi::create([
                 'user_id' => $pendaftaran->user_id,
