@@ -22,6 +22,7 @@ class User extends Authenticatable
         'username',
         'email',
         'role',
+        'spesialis', // ✅ FIX: agar spesialis tersimpan
         'password',
         'tanggal_lahir',
         'jenis_kelamin',
@@ -34,6 +35,7 @@ class User extends Authenticatable
         // (opsional bila ada di migration nanti)
         // 'no_rm',
         // 'qr_path',
+        // 'qr_token',
     ];
 
     protected $hidden = [

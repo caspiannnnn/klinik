@@ -14,23 +14,33 @@ return new class extends Migration
         Schema::create('users', function (Blueprint $table) {
             $table->id();
 
+            // Identitas akun
             $table->string('name');
             $table->string('username')->unique();
             $table->string('email')->unique();
             $table->timestamp('email_verified_at')->nullable();
             $table->string('password');
 
+            // Role (sesuai project kamu)
+            $table->enum('role', ['admin', 'dokter', 'pasien', 'resepsionis'])->default('pasien');
+
+            // ✅ Dokter
+            $table->string('spesialis')->nullable();
+
             // Profil dasar
             $table->string('alamat')->nullable();
             $table->string('telepon')->nullable();
 
-            // ✅ Dipakai di register
+            // Dipakai di register / pasien
             $table->string('no_hp')->nullable();
             $table->date('tanggal_lahir')->nullable();
             $table->enum('jenis_kelamin', ['Laki-laki', 'Perempuan'])->nullable();
             $table->string('nik', 16)->nullable();
 
-            $table->enum('role', ['admin', 'dokter', 'pasien', 'resepsionis'])->default('pasien');
+            // ✅ Kartu pasien (QR)
+            $table->string('no_rm')->nullable()->unique();
+            $table->uuid('qr_token')->nullable()->unique();
+            $table->string('qr_path')->nullable();
 
             $table->rememberToken();
             $table->timestamps();

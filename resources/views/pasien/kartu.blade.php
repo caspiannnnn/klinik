@@ -30,19 +30,18 @@
 
       <div class="flex items-center justify-center">
         @if($user->qr_url)
-          <img id="qrImage" src="{{ $user->qr_url }}" alt="QR Pasien" class="w-32 h-32" crossorigin="anonymous">
+          {{-- QR sumbernya SVG (aman tanpa imagick), tapi bisa diunduh jadi PNG --}}
+          <img id="qrImage" src="{{ $user->qr_url }}" alt="QR Pasien" class="w-32 h-32">
         @endif
       </div>
     </div>
 
     <div class="mt-6 flex items-center justify-between no-print">
-      {{-- ✅ Unduh jadi PNG (bukan SVG) --}}
       <a href="#"
          id="downloadQrPng"
          class="text-sm text-blue-600 underline">
         Unduh QR
       </a>
-
       <button onclick="window.print()" class="text-sm px-3 py-1 rounded bg-blue-600 text-white">Cetak</button>
     </div>
   </div>
@@ -50,17 +49,9 @@
 
 <style>
   @media print {
-    /* sembunyikan semua elemen halaman */
-    body * {
-      visibility: hidden !important;
-    }
+    body * { visibility: hidden !important; }
+    #kartu-pasien, #kartu-pasien * { visibility: visible !important; }
 
-    /* tampilkan hanya kartu pasien */
-    #kartu-pasien, #kartu-pasien * {
-      visibility: visible !important;
-    }
-
-    /* posisikan kartu di kiri atas & rapikan */
     #kartu-pasien {
       position: absolute;
       left: 0;
@@ -71,10 +62,7 @@
       margin: 0 !important;
     }
 
-    /* sembunyikan tombol/link saat print */
-    .no-print {
-      display: none !important;
-    }
+    .no-print { display: none !important; }
   }
 </style>
 
@@ -84,43 +72,69 @@
   const img = document.getElementById('qrImage');
   if (!btn || !img) return;
 
-  function downloadDataUrl(dataUrl, filename) {
+  function downloadBlob(blob, filename) {
+    const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
-    a.href = dataUrl;
+    a.href = url;
     a.download = filename;
     document.body.appendChild(a);
     a.click();
     a.remove();
+    URL.revokeObjectURL(url);
+  }
+
+  async function fetchAsText(url) {
+    const res = await fetch(url, { cache: 'no-store' });
+    if (!res.ok) throw new Error('Gagal mengambil QR (fetch).');
+    return await res.text();
   }
 
   btn.addEventListener('click', async function (e) {
     e.preventDefault();
 
-    // Pastikan gambar sudah ke-load
-    if (!img.complete) {
-      await new Promise(resolve => img.addEventListener('load', resolve, { once: true }));
-    }
-
-    const canvas = document.createElement('canvas');
-    const w = img.naturalWidth || 256;
-    const h = img.naturalHeight || 256;
-    canvas.width = w;
-    canvas.height = h;
-
-    const ctx = canvas.getContext('2d');
-    // background putih biar QR bersih
-    ctx.fillStyle = '#ffffff';
-    ctx.fillRect(0, 0, w, h);
-
     try {
-      ctx.drawImage(img, 0, 0, w, h);
-      const dataUrl = canvas.toDataURL('image/png');
-      const filename = `qr-pasien-{{ $user->username ?? $user->id }}.png`;
-      downloadDataUrl(dataUrl, filename);
+      // 1) Ambil SVG raw dari URL (storage/...)
+      const svgText = await fetchAsText(img.src);
+
+      // 2) Ubah SVG text jadi Blob URL
+      const svgBlob = new Blob([svgText], { type: 'image/svg+xml;charset=utf-8' });
+      const svgUrl = URL.createObjectURL(svgBlob);
+
+      // 3) Render SVG ke canvas
+      const canvas = document.createElement('canvas');
+      const size = 600; // lebih besar biar tajam saat scan
+      canvas.width = size;
+      canvas.height = size;
+
+      const ctx = canvas.getContext('2d');
+      ctx.fillStyle = '#ffffff';
+      ctx.fillRect(0, 0, size, size);
+
+      const tempImg = new Image();
+      tempImg.onload = function () {
+        ctx.drawImage(tempImg, 0, 0, size, size);
+
+        canvas.toBlob(function (pngBlob) {
+          if (!pngBlob) {
+            alert('Gagal membuat PNG.');
+            URL.revokeObjectURL(svgUrl);
+            return;
+          }
+          const filename = `qr-pasien-{{ $user->username ?? $user->id }}.png`;
+          downloadBlob(pngBlob, filename);
+          URL.revokeObjectURL(svgUrl);
+        }, 'image/png');
+      };
+
+      tempImg.onerror = function () {
+        URL.revokeObjectURL(svgUrl);
+        alert('Gagal memuat SVG untuk dikonversi ke PNG.');
+      };
+
+      tempImg.src = svgUrl;
     } catch (err) {
-      // Kalau server tidak mengizinkan canvas membaca SVG cross-origin
-      alert('Gagal mengunduh PNG. Pastikan file QR bisa diakses (storage:link) dan bukan blocked oleh browser.');
       console.error(err);
+      alert('Gagal mengunduh PNG. Pastikan storage:link sudah dibuat dan QR bisa diakses.');
     }
   });
 })();
