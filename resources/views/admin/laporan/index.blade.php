@@ -54,8 +54,10 @@
                 <tr>
                     <th class="py-3 px-4">#</th>
                     <th class="py-3 px-4">Nama Pasien</th>
-                    <th class="py-3 px-4">Total Pemasukan</th>
-                    <th class="py-3 px-4">Terakhir Bayar</th>
+                    <th class="py-3 px-4">Kode Tagihan</th>
+                    <th class="py-3 px-4">Nominal</th>
+                    <th class="py-3 px-4">Status</th>
+                    <th class="py-3 px-4">Tanggal Bayar</th>
                 </tr>
             </thead>
             <tbody>
@@ -63,14 +65,14 @@
                     <tr class="border-b hover:bg-gray-100 text-center">
                         <td class="py-3 px-4">{{ $loop->iteration }}</td>
                         <td class="py-3 px-4">{{ $row->user->name ?? 'Tidak diketahui' }}</td>
-                        <td class="py-3 px-4">Rp {{ number_format((int) $row->total, 0, ',', '.') }}</td>
-                        <td class="py-3 px-4">
-                            {{ $row->last_paid_at ? \Carbon\Carbon::parse($row->last_paid_at)->format('d M Y H:i') : '-' }}
-                        </td>
+                        <td class="py-3 px-4">{{ $row->kode_tagihan ?? '-' }}</td>
+                        <td class="py-3 px-4">Rp {{ number_format((int) $row->jumlah, 0, ',', '.') }}</td>
+                        <td class="py-3 px-4">{{ $row->status ?? '-' }}</td>
+                        <td class="py-3 px-4">{{ $row->created_at ? $row->created_at->format('d M Y H:i') : '-' }}</td>
                     </tr>
                 @empty
                     <tr>
-                        <td colspan="4" class="py-4 text-center text-gray-500">
+                        <td colspan="6" class="py-4 text-center text-gray-500">
                             Belum ada pemasukan pada periode ini.
                         </td>
                     </tr>
@@ -79,8 +81,9 @@
             @if(!$laporan->isEmpty())
             <tfoot>
                 <tr class="bg-blue-50">
-                    <td colspan="2" class="py-3 px-4 font-semibold text-blue-800 text-right">Total Keseluruhan:</td>
+                    <td colspan="3" class="py-3 px-4 font-semibold text-blue-800 text-right">Total Keseluruhan:</td>
                     <td class="py-3 px-4 font-bold text-blue-800">Rp {{ number_format((int) $totalKeseluruhan, 0, ',', '.') }}</td>
+                    <td class="py-3 px-4"></td>
                     <td class="py-3 px-4"></td>
                 </tr>
             </tfoot>

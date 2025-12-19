@@ -19,17 +19,17 @@
             </a>
         </div>
 
-        <!-- Card for Konsultasi -->
+        <!-- Card for Pendaftaran Saya -->
         <div class="bg-white shadow-lg rounded-lg p-6 transition-transform transform hover:scale-105">
             <div class="flex items-center mb-4">
                 <img src="{{ asset('images/konsultasi.png') }}"
-                    alt="Konsultasi" class="mr-3">
+                    alt="Pendaftaran" class="mr-3">
             </div>
-            <h2 class="text-xl font-semibold">Konsultasi</h2>
+            <h2 class="text-xl font-semibold">Pendaftaran Saya</h2>
 
-            <p class="text-gray-600 mb-4">Daftar untuk konsultasi dengan dokter pilihan Anda.</p>
-            <a href="/pendaftaran" class="text-blue-500 font-semibold hover:underline">
-                <i class="fas fa-user-md mr-1"></i> Daftar Konsultasi
+            <p class="text-gray-600 mb-4">Lihat status pendaftaran, nomor antrian, dan lakukan reschedule jika diperlukan.</p>
+            <a href="/pendaftaran-saya" class="text-blue-500 font-semibold hover:underline">
+                <i class="fas fa-list mr-1"></i> Lihat Pendaftaran
             </a>
         </div>
 

@@ -63,25 +63,37 @@
 
     <h3 class="font-semibold mb-2">Riwayat / Daftar Pendaftaran</h3>
     <div class="overflow-x-auto">
-      <table class="min-w-full text-sm">
+      <table class="min-w-full text-sm" id="riwayat-table">
         <thead>
-          <tr class="text-left text-gray-500">
+          <tr class="text-left text-gray-500 text-center">
             <th class="py-2">Tanggal</th>
             <th class="py-2">Keluhan</th>
             <th class="py-2">Status</th>
-            <th class="py-2">Aksi</th>
           </tr>
         </thead>
         <tbody>
           @forelse($pendaftarans as $p)
-            <tr class="border-t">
+            @php
+              $auth = Auth::user();
+              $isDokter = $auth && (($auth->role ?? '') === 'dokter');
+
+              $status = strtolower((string) ($p->status ?? ''));
+              $isDiterima = $status === 'diterima';
+
+              $dokterId = (int) ($p->dokter_id ?? 0);
+              $diterimaOlehId = (int) ($p->diterima_oleh_dokter_id ?? 0);
+              $authId = (int) ($auth->id ?? 0);
+
+              $canOpen = $isDokter && $isDiterima && ($dokterId === $authId || $diterimaOlehId === $authId);
+            @endphp
+
+            <tr class="border-t text-center">
               <td class="py-2">{{ $p->created_at->format('d/m/Y H:i') }}</td>
-              <td class="py-2">{{ \Illuminate\Support\Str::limit($p->keluhan, 40) }}</td>
+
+              {{-- ✅ FIX: cegah keluhan wrap -> tinggi baris jadi sama semua --}}
+              <td class="py-2 whitespace-nowrap">{{ \Illuminate\Support\Str::limit($p->keluhan, 40) }}</td>
+
               <td class="py-2 capitalize">{{ $p->status }}</td>
-              <td class="py-2">
-                <a href="{{ route('dokter.rekam_medis.show', $p->id) }}"
-                   class="text-blue-600 underline">Buka</a>
-              </td>
             </tr>
           @empty
             <tr><td class="py-3 text-gray-500" colspan="4">Belum ada pendaftaran.</td></tr>
@@ -94,9 +106,9 @@
 
     <h3 class="font-semibold mb-2">Rekam Medis Pasien</h3>
     <div class="overflow-x-auto">
-      <table class="min-w-full text-sm">
+      <table class="min-w-full text-sm text-center">
         <thead>
-          <tr class="text-left text-gray-500">
+          <tr class="text-left text-gray-500 text-center">
             <th class="py-2">Tanggal</th>
             <th class="py-2">Dokter</th>
             <th class="py-2">Diagnosa</th>

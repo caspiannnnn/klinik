@@ -43,12 +43,10 @@ class AdminLaporanController extends Controller
             $baseQuery->whereBetween('created_at', [$from, $to]);
         }
 
-        // Rekap per pasien (sum jumlah)
+        // ✅ List detail pembayaran (jangan digabung walaupun nama pasien sama)
         $laporan = (clone $baseQuery)
-            ->select('user_id', DB::raw('SUM(jumlah) as total'), DB::raw('MAX(created_at) as last_paid_at'))
             ->with('user')
-            ->groupBy('user_id')
-            ->orderByDesc('total')
+            ->orderByDesc('created_at')
             ->get();
 
         // Total keseluruhan pemasukan

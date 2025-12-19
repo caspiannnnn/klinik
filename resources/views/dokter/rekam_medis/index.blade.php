@@ -23,29 +23,16 @@
                         <td class="px-4 py-2">{{ $index + 1 }}</td>
                         <td class="px-4 py-2">{{ $pendaftar->nama }}</td>
                         <td class="px-4 py-2">
-                            @php
-                                // ✅ Aman: kalau null / format aneh, tidak error 500
-                                $tglLahir = $pendaftar->tanggal_lahir ?? null;
-                                $tglLahirFormatted = '-';
-                                if (!empty($tglLahir)) {
-                                    try {
-                                        $tglLahirFormatted = \Carbon\Carbon::parse($tglLahir)->format('d-m-Y');
-                                    } catch (\Throwable $e) {
-                                        $tglLahirFormatted = '-';
-                                    }
-                                }
-                            @endphp
-                            {{ $tglLahirFormatted }}
+                            {{ \Carbon\Carbon::parse($pendaftar->tanggal_lahir)->format('d-m-Y') }}
                         </td>
-                        <td class="px-4 py-2">{{ $pendaftar->jenis_kelamin ?? '-' }}</td>
+                        <td class="px-4 py-2">{{ $pendaftar->jenis_kelamin }}</td>
                         <td class="px-4 py-2 text-center">
-                            <a href="{{ route('dokter.rekam_medis.show', $pendaftar->id) }}" class="text-blue-600 hover:underline text-sm">
+                            <a href="{{ route('dokter.rekam_medis.form', $pendaftar->id) }}" class="text-blue-600 hover:underline text-sm">
                                 Isi Rekam Medis
                             </a>
                         </td>
                     </tr>
                 @endforeach
-
                 @if($pendaftars->isEmpty())
                     <tr>
                         <td colspan="5" class="px-4 py-2 text-center text-gray-500">Tidak ada pasien dengan status Diterima.</td>

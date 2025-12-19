@@ -1,117 +1,93 @@
 <?php
 
-namespace App\Http\Controllers\Api;
+namespace App\Http\Controllers\API;
 
 use App\Http\Controllers\Controller;
-use App\Models\RekamMedis;
 use Illuminate\Http\Request;
-use Illuminate\Http\Response;
+use App\Models\RekamMedis;
 
 class RekamMedisApiController extends Controller
 {
     public function index()
     {
-        $data = RekamMedis::latest()->get();
+        $data = RekamMedis::with(['pasien', 'dokter'])->latest()->get();
 
         return response()->json([
             'success' => true,
             'data' => $data,
-        ], 200);
+        ]);
     }
 
     public function store(Request $request)
     {
         $validated = $request->validate([
-            'pendaftaran_id' => ['required', 'integer', 'exists:pendaftarans,id'],
-            'diagnosa' => ['required', 'string'],
-            'tindakan' => ['nullable', 'string'],
-            'catatan' => ['nullable', 'string'],
+            'pasien_id'  => 'required|exists:pasiens,id',
+            'dokter_id'  => 'required|exists:dokters,id',
+            'diagnosa'   => 'required|string',
+            'tindakan'   => 'required|string',
+            'resep'      => 'nullable|string',
+            'catatan'    => 'nullable|string',
+            'tanggal'    => 'required|date',
         ]);
 
-        // ✅ AUTO: dokter_id dari user login (sanctum)
-        $validated['dokter_id'] = $request->user()->id;
-
-        $rekam = RekamMedis::create($validated);
+        $rekamMedis = RekamMedis::create($validated);
 
         return response()->json([
             'success' => true,
-            'message' => 'Rekam medis berhasil dibuat.',
-            'data' => $rekam,
-        ], Response::HTTP_CREATED);
+            'message' => 'Rekam medis berhasil dibuat',
+            'data' => $rekamMedis->load(['pasien', 'dokter']),
+        ], 201);
     }
 
-    public function show($id)
+    public function show(RekamMedis $rekamMedis)
     {
-        $rekam = RekamMedis::find($id);
-
-        if (!$rekam) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Rekam medis tidak ditemukan.',
-            ], 404);
-        }
-
         return response()->json([
             'success' => true,
-            'data' => $rekam,
-        ], 200);
+            'data' => $rekamMedis->load(['pasien', 'dokter']),
+        ]);
     }
 
-    public function update(Request $request, $id)
+    public function update(Request $request, RekamMedis $rekamMedis)
     {
-        $rekam = RekamMedis::find($id);
-
-        if (!$rekam) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Rekam medis tidak ditemukan.',
-            ], 404);
-        }
-
         $validated = $request->validate([
-            'pendaftaran_id' => ['sometimes', 'integer', 'exists:pendaftarans,id'],
-            'diagnosa' => ['sometimes', 'string'],
-            'tindakan' => ['nullable', 'string'],
-            'catatan' => ['nullable', 'string'],
+            'pasien_id'  => 'nullable|exists:pasiens,id',
+            'dokter_id'  => 'nullable|exists:dokters,id',
+            'diagnosa'   => 'nullable|string',
+            'tindakan'   => 'nullable|string',
+            'resep'      => 'nullable|string',
+            'catatan'    => 'nullable|string',
+            'tanggal'    => 'nullable|date',
         ]);
 
-        $rekam->update($validated);
+        $rekamMedis->update($validated);
 
         return response()->json([
             'success' => true,
-            'message' => 'Rekam medis berhasil diperbarui.',
-            'data' => $rekam,
-        ], 200);
+            'message' => 'Rekam medis berhasil diperbarui',
+            'data' => $rekamMedis->fresh()->load(['pasien', 'dokter']),
+        ]);
     }
 
-    public function destroy($id)
+    public function destroy(RekamMedis $rekamMedis)
     {
-        $rekam = RekamMedis::find($id);
-
-        if (!$rekam) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Rekam medis tidak ditemukan.',
-            ], 404);
-        }
-
-        $rekam->delete();
+        $rekamMedis->delete();
 
         return response()->json([
             'success' => true,
-            'message' => 'Rekam medis berhasil dihapus.',
-        ], 200);
+            'message' => 'Rekam medis berhasil dihapus',
+        ]);
     }
 
-    public function byPatient($user_id)
+    public function byPasien($pasien_id)
     {
-        $data = RekamMedis::whereHas('pendaftaran', function ($q) use ($user_id) {
-            $q->where('user_id', $user_id);
-        })->latest()->get();
+        $data = RekamMedis::where('pasien_id', $pasien_id)
+            ->with(['pasien', 'dokter'])
+            ->latest()
+            ->get();
 
         return response()->json([
             'success' => true,
             'data' => $data,
-        ], 200);
+        ]);
     }
 }

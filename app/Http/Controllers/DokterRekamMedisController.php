@@ -2,17 +2,50 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\Pendaftaran;
-use App\Models\RekamMedis;
-use App\Models\Notifikasi;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\View;
+use App\Models\Pendaftaran;
+use App\Models\RekamMedis;
 
 class DokterRekamMedisController extends Controller
 {
-    public function index()
+    public function pasienIndex()
     {
-        $rekamMedisList = RekamMedis::with(['pendaftaran', 'dokter'])
+        $dokter = Auth::user();
+
+        $pendaftars = Pendaftaran::query()
+            ->where('status', 'diterima')
+            ->where(function ($q) use ($dokter) {
+                $q->where('dokter_id', $dokter->id)
+                  ->orWhere('diterima_oleh_dokter_id', $dokter->id);
+            })
+            ->orderBy('created_at', 'desc')
+            ->get();
+
+        // ✅ Pastikan view data pasien yang ada dipakai
+        $viewCandidates = [
+            'dokter.data_pasien',
+            'dokter.pasien',
+            'dokter.rekam_medis.index',
+            'dokter.rekam-medis.index',
+        ];
+
+        foreach ($viewCandidates as $v) {
+            if (View::exists($v)) {
+                return view($v, compact('pendaftars'));
+            }
+        }
+
+        abort(500, 'View data pasien tidak ditemukan.');
+    }
+
+    public function daftarIndex()
+    {
+        $dokter = Auth::user();
+
+        $rekamMedisList = RekamMedis::with('pendaftaran')
+            ->where('dokter_id', $dokter->id)
             ->orderBy('created_at', 'desc')
             ->get();
 
@@ -21,51 +54,78 @@ class DokterRekamMedisController extends Controller
 
     public function show($id)
     {
-        $pendaftaran = Pendaftaran::with('user')->findOrFail($id);
+        $dokter = Auth::user();
 
-        $rekamTerakhir = RekamMedis::with(['dokter', 'pendaftaran'])
-            ->where('pendaftaran_id', $id)
-            ->latest()
-            ->first();
+        $pendaftaran = Pendaftaran::query()->findOrFail($id);
 
-        return view('dokter.rekam_medis', compact('pendaftaran', 'rekamTerakhir'));
+        // ✅ hanya boleh input jika diterima
+        if ((string) ($pendaftaran->status ?? '') !== 'diterima') {
+            abort(403, 'Pendaftaran belum berstatus diterima.');
+        }
+
+        // ✅ pastikan pendaftaran memang untuk dokter ini
+        if (
+            !empty($pendaftaran->dokter_id)
+            && (int) $pendaftaran->dokter_id !== (int) $dokter->id
+            && (int) ($pendaftaran->diterima_oleh_dokter_id ?? 0) !== (int) $dokter->id
+        ) {
+            abort(403, 'Pendaftaran ini bukan untuk Anda.');
+        }
+
+        // ✅ Cari view form rekam medis yang benar (berdasarkan file yang biasanya ada)
+        $viewCandidates = [
+            'dokter.rekam_medis',                 // misal: resources/views/dokter/rekam_medis.blade.php
+            'dokter.rekam_medis.rekam_medis',     // misal: resources/views/dokter/rekam_medis/rekam_medis.blade.php
+            'dokter.rekam_medis.form',
+            'dokter.rekam-medis.rekam_medis',
+            'dokter.rekam-medis.form',
+        ];
+
+        foreach ($viewCandidates as $v) {
+            if (View::exists($v)) {
+                return view($v, compact('pendaftaran'));
+            }
+        }
+
+        abort(500, 'View form rekam medis tidak ditemukan.');
     }
 
     public function store(Request $request, $id)
     {
+        $dokter = Auth::user();
+
+        $pendaftaran = Pendaftaran::query()->findOrFail($id);
+
+        if ((string) ($pendaftaran->status ?? '') !== 'diterima') {
+            abort(403, 'Pendaftaran belum berstatus diterima.');
+        }
+
+        if (
+            !empty($pendaftaran->dokter_id)
+            && (int) $pendaftaran->dokter_id !== (int) $dokter->id
+            && (int) ($pendaftaran->diterima_oleh_dokter_id ?? 0) !== (int) $dokter->id
+        ) {
+            abort(403, 'Pendaftaran ini bukan untuk Anda.');
+        }
+
         $request->validate([
-            'diagnosa' => 'required|string|max:255',
-            'tindakan' => 'required|string|max:255',
+            'diagnosa' => 'required|string',
+            'tindakan' => 'required|string',
+            'resep'    => 'nullable|string',
             'catatan'  => 'nullable|string',
         ]);
 
-        $pendaftaran = Pendaftaran::with('user')->findOrFail($id);
-
-        $rekam = RekamMedis::create([
+        RekamMedis::create([
             'pendaftaran_id' => $pendaftaran->id,
-            'dokter_id'      => Auth::id(),
+            'pasien_id'      => $pendaftaran->user_id,
+            'dokter_id'      => $dokter->id,
             'diagnosa'       => $request->diagnosa,
             'tindakan'       => $request->tindakan,
+            'resep'          => $request->resep,
             'catatan'        => $request->catatan,
+            'tanggal'        => now()->toDateString(),
         ]);
 
-        // ✅ set selesai (nyambung dengan model Pendaftaran)
-        $pendaftaran->update([
-            'status' => Pendaftaran::STATUS_SELESAI,
-        ]);
-
-        // ✅ Notifikasi ke pasien
-        if (!empty($pendaftaran->user_id)) {
-            Notifikasi::create([
-                'user_id' => $pendaftaran->user_id,
-                'judul'   => 'Rekam Medis Baru Ditambahkan',
-                'pesan'   => 'Dokter telah menambahkan rekam medis untuk kunjungan Anda pada ' . $rekam->created_at->format('d-m-Y H:i') . '.',
-                'tipe'    => 'rekam_medis',
-                'link'    => route('pasien.rekam_medis'),
-                'dibaca'  => false,
-            ]);
-        }
-
-        return redirect()->back()->with('success', 'Rekam medis berhasil disimpan.');
+        return redirect()->route('dokter.daftar_rekam_medis')->with('success', 'Rekam medis berhasil disimpan.');
     }
 }

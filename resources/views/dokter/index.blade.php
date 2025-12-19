@@ -16,7 +16,7 @@
 
         <div class="bg-white shadow-lg rounded-lg p-6">
             <h2 class="text-xl font-semibold mb-2">Total Konsultasi</h2>
-            <p class="text-3xl font-bold text-blue-500">{{ $totalPasien }}</p>
+            <p class="text-3xl font-bold text-blue-500">{{ $totalKonsultasi }}</p>
         </div>
     </div>
 
@@ -24,18 +24,18 @@
     <div class="overflow-x-auto">
         <table class="min-w-full bg-white shadow-md rounded-lg">
             <thead>
-                <tr class="bg-blue-500 text-white">
-                    <th class="py-3 px-4 text-left">Tanggal</th>
-                    <th class="py-3 px-4 text-left">Pasien</th>
-                    <th class="py-3 px-4 text-left">Waktu</th>
+                <tr class="bg-blue-500 text-white text-center">
+                    <th class="py-3 px-4">Tanggal</th>
+                    <th class="py-3 px-4">Pasien</th>
+                    <th class="py-3 px-4">Waktu</th>
                 </tr>
             </thead>
             <tbody>
                 @forelse($jadwalHariIni as $item)
-                    <tr class="border-b hover:bg-gray-100">
-                        <td class="py-3 px-4">{{ $item->tanggal }}</td>
-                        <td class="py-3 px-4">{{ $item->pasien->name ?? '-' }}</td>
-                        <td class="py-3 px-4">{{ $item->jam_mulai ?? 'N/A' }} - {{ $item->jam_selesai ?? 'N/A' }}</td>
+                    <tr class="border-b hover:bg-gray-100 text-center">
+                        <td class="py-3 px-4">{{ optional($item->created_at)->format('d-m-Y') }}</td>
+                        <td class="py-3 px-4">{{ $item->nama ?? optional($item->user)->name ?? '-' }}</td>
+                        <td class="py-3 px-4">N/A</td>
                     </tr>
                 @empty
                     <tr>

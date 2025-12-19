@@ -1,274 +1,132 @@
 <?php
 
-namespace App\Http\Controllers\Api;
+namespace App\Http\Controllers\API;
 
 use App\Http\Controllers\Controller;
-use App\Models\Pendaftaran;
 use Illuminate\Http\Request;
-use Illuminate\Http\Response;
-use Illuminate\Database\QueryException;
-use Illuminate\Support\Facades\Schema;
-use OpenApi\Annotations as OA;
+use App\Models\Pendaftaran;
+use App\Models\Pasien;
+use App\Models\Dokter;
+use Illuminate\Support\Str;
+use Illuminate\Support\Facades\Storage;
 
-/**
- * @OA\Tag(
- *     name="Pendaftaran",
- *     description="Pendaftaran & antrian pasien"
- * )
- */
 class PendaftaranApiController extends Controller
 {
-    /**
-     * @OA\Get(
-     *     path="/api/pendaftarans",
-     *     tags={"Pendaftaran"},
-     *     summary="List pendaftaran (paginate)",
-     *     security={{"sanctum":{}}},
-     *     @OA\Parameter(
-     *         name="per_page",
-     *         in="query",
-     *         required=false,
-     *         @OA\Schema(type="integer", default=15)
-     *     ),
-     *     @OA\Response(response=200, description="OK")
-     * )
-     */
-    public function index(Request $request)
+    public function index()
     {
-        $model = new Pendaftaran();
-        $table = $model->getTable();
-
-        $query = Pendaftaran::query();
-
-        // contoh filter status jika ada kolom status
-        if ($request->filled('status') && Schema::hasColumn($table, 'status')) {
-            $query->where('status', $request->query('status'));
-        }
-
-        // contoh filter berdasarkan user_id jika ada kolom user_id
-        if ($request->filled('user_id') && Schema::hasColumn($table, 'user_id')) {
-            $query->where('user_id', $request->query('user_id'));
-        }
-
-        $perPage = (int) $request->query('per_page', 15);
-        $perPage = $perPage > 0 ? min($perPage, 100) : 15;
-
-        $results = $query->paginate($perPage);
+        $data = Pendaftaran::with(['pasien', 'dokter'])->latest()->get();
 
         return response()->json([
             'success' => true,
-            'message' => 'List pendaftaran.',
-            'data'    => $results->items(),
-            'meta'    => [
-                'current_page' => $results->currentPage(),
-                'per_page'     => $results->perPage(),
-                'total'        => $results->total(),
-                'last_page'    => $results->lastPage(),
-            ],
+            'data' => $data,
         ]);
     }
 
-    /**
-     * @OA\Post(
-     *     path="/api/pendaftarans",
-     *     tags={"Pendaftaran"},
-     *     summary="Buat pendaftaran baru",
-     *     security={{"sanctum":{}}},
-     *     @OA\RequestBody(
-     *         required=true,
-     *         @OA\JsonContent(
-     *             description="Field mengikuti fillable di model Pendaftaran"
-     *         )
-     *     ),
-     *     @OA\Response(response=201, description="Berhasil dibuat"),
-     *     @OA\Response(response=422, description="Gagal menyimpan")
-     * )
-     */
     public function store(Request $request)
     {
-        $model = new Pendaftaran();
+        $validated = $request->validate([
+            'pasien_id'       => 'required|exists:pasiens,id',
+            'dokter_id'       => 'required|exists:dokters,id',
+            'tanggal'         => 'required|date',
+            'jam'             => 'required',
+            'keluhan'         => 'nullable|string',
+            'status'          => 'nullable|string',
+            'metode_bayar'    => 'nullable|string',
+            'total_bayar'     => 'nullable|numeric',
+        ]);
 
-        $data = $request->only($model->getFillable());
+        $pasien = Pasien::findOrFail($validated['pasien_id']);
+        $dokter = Dokter::findOrFail($validated['dokter_id']);
 
-        try {
-            $pendaftaran = Pendaftaran::create($data);
-        } catch (QueryException $e) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Gagal menyimpan data pendaftaran.',
-                'error'   => $e->getMessage(),
-            ], Response::HTTP_UNPROCESSABLE_ENTITY);
-        }
+        $pendaftaran = Pendaftaran::create([
+            'pasien_id'    => $pasien->id,
+            'dokter_id'    => $dokter->id,
+            'tanggal'      => $validated['tanggal'],
+            'jam'          => $validated['jam'],
+            'keluhan'      => $validated['keluhan'] ?? null,
+            'status'       => $validated['status'] ?? 'menunggu',
+            'kode_daftar'  => Str::upper(Str::random(8)),
+            'metode_bayar' => $validated['metode_bayar'] ?? null,
+            'total_bayar'  => $validated['total_bayar'] ?? 0,
+        ]);
 
         return response()->json([
             'success' => true,
-            'message' => 'Pendaftaran berhasil dibuat.',
-            'data'    => $pendaftaran,
-        ], Response::HTTP_CREATED);
+            'message' => 'Pendaftaran berhasil dibuat',
+            'data' => $pendaftaran->load(['pasien', 'dokter']),
+        ], 201);
     }
 
-    /**
-     * @OA\Get(
-     *     path="/api/pendaftarans/{id}",
-     *     tags={"Pendaftaran"},
-     *     summary="Detail pendaftaran",
-     *     security={{"sanctum":{}}},
-     *     @OA\Parameter(
-     *         name="id",
-     *         in="path",
-     *         required=true,
-     *         @OA\Schema(type="integer")
-     *     ),
-     *     @OA\Response(response=200, description="OK"),
-     *     @OA\Response(response=404, description="Tidak ditemukan")
-     * )
-     */
     public function show(Pendaftaran $pendaftaran)
     {
         return response()->json([
             'success' => true,
-            'data'    => $pendaftaran,
+            'data' => $pendaftaran->load(['pasien', 'dokter']),
         ]);
     }
 
-    /**
-     * @OA\Put(
-     *     path="/api/pendaftarans/{id}",
-     *     tags={"Pendaftaran"},
-     *     summary="Update pendaftaran",
-     *     security={{"sanctum":{}}},
-     *     @OA\Parameter(
-     *         name="id",
-     *         in="path",
-     *         required=true,
-     *         @OA\Schema(type="integer")
-     *     ),
-     *     @OA\RequestBody(
-     *         required=false,
-     *         @OA\JsonContent()
-     *     ),
-     *     @OA\Response(response=200, description="Berhasil diupdate"),
-     *     @OA\Response(response=422, description="Gagal menyimpan")
-     * )
-     */
     public function update(Request $request, Pendaftaran $pendaftaran)
     {
-        $data = $request->only($pendaftaran->getFillable());
+        $validated = $request->validate([
+            'pasien_id'       => 'nullable|exists:pasiens,id',
+            'dokter_id'       => 'nullable|exists:dokters,id',
+            'tanggal'         => 'nullable|date',
+            'jam'             => 'nullable',
+            'keluhan'         => 'nullable|string',
+            'status'          => 'nullable|string',
+            'metode_bayar'    => 'nullable|string',
+            'total_bayar'     => 'nullable|numeric',
+        ]);
 
-        try {
-            $pendaftaran->fill($data);
-            $pendaftaran->save();
-        } catch (QueryException $e) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Gagal memperbarui pendaftaran.',
-                'error'   => $e->getMessage(),
-            ], Response::HTTP_UNPROCESSABLE_ENTITY);
-        }
+        $pendaftaran->update($validated);
 
         return response()->json([
             'success' => true,
-            'message' => 'Pendaftaran berhasil diperbarui.',
-            'data'    => $pendaftaran,
+            'message' => 'Pendaftaran berhasil diperbarui',
+            'data' => $pendaftaran->fresh()->load(['pasien', 'dokter']),
         ]);
     }
 
-    /**
-     * @OA\Delete(
-     *     path="/api/pendaftarans/{id}",
-     *     tags={"Pendaftaran"},
-     *     summary="Hapus pendaftaran",
-     *     security={{"sanctum":{}}},
-     *     @OA\Parameter(
-     *         name="id",
-     *         in="path",
-     *         required=true,
-     *         @OA\Schema(type="integer")
-     *     ),
-     *     @OA\Response(response=204, description="Berhasil dihapus")
-     * )
-     */
     public function destroy(Pendaftaran $pendaftaran)
     {
         $pendaftaran->delete();
 
-        return response()->json(null, Response::HTTP_NO_CONTENT);
-    }
-
-    /**
-     * @OA\Get(
-     *     path="/api/pendaftarans/hari-ini",
-     *     tags={"Pendaftaran"},
-     *     summary="Pendaftaran hari ini (berdasarkan created_at jika ada)",
-     *     security={{"sanctum":{}}},
-     *     @OA\Response(response=200, description="OK")
-     * )
-     */
-    public function today(Request $request)
-    {
-        $model = new Pendaftaran();
-        $table = $model->getTable();
-
-        $query = Pendaftaran::query();
-
-        if (Schema::hasColumn($table, 'created_at')) {
-            $query->whereDate('created_at', now()->toDateString());
-        }
-
-        $perPage = (int) $request->query('per_page', 15);
-        $perPage = $perPage > 0 ? min($perPage, 100) : 15;
-
-        $results = $query->paginate($perPage);
-
         return response()->json([
             'success' => true,
-            'message' => 'Pendaftaran untuk hari ini.',
-            'data'    => $results->items(),
-            'meta'    => [
-                'current_page' => $results->currentPage(),
-                'per_page'     => $results->perPage(),
-                'total'        => $results->total(),
-                'last_page'    => $results->lastPage(),
-            ],
+            'message' => 'Pendaftaran berhasil dihapus',
         ]);
     }
 
-    /**
-     * @OA\Post(
-     *     path="/api/pendaftarans/{id}/checkin",
-     *     tags={"Pendaftaran"},
-     *     summary="Check-in pendaftaran (optional, tergantung schema)",
-     *     security={{"sanctum":{}}},
-     *     @OA\Parameter(
-     *         name="id",
-     *         in="path",
-     *         required=true,
-     *         @OA\Schema(type="integer")
-     *     ),
-     *     @OA\Response(response=200, description="Check-in berhasil")
-     * )
-     */
-    public function checkin(Pendaftaran $pendaftaran)
+    public function byUser($user_id)
     {
-        $table = $pendaftaran->getTable();
+        $data = Pendaftaran::whereHas('pasien', function ($q) use ($user_id) {
+            $q->where('user_id', $user_id);
+        })->with(['pasien', 'dokter'])->latest()->get();
 
-        // misal update status & checkin_at jika kolom ada
-        if (Schema::hasColumn($table, 'checkin_at')) {
-            $pendaftaran->checkin_at = now();
-        }
+        return response()->json([
+            'success' => true,
+            'data' => $data,
+        ]);
+    }
 
-        if (Schema::hasColumn($table, 'status')) {
-            if (defined(Pendaftaran::class . '::STATUS_DATANG')) {
-                $pendaftaran->status = Pendaftaran::STATUS_DATANG;
-            }
-        }
+    public function uploadBukti(Request $request, Pendaftaran $pendaftaran)
+    {
+        $validated = $request->validate([
+            'bukti_bayar' => 'required|file|mimes:jpg,jpeg,png,pdf|max:2048',
+        ]);
 
+        $file = $validated['bukti_bayar'];
+        $filename = 'bukti_bayar/' . time() . '_' . Str::random(8) . '.' . $file->getClientOriginalExtension();
+
+        Storage::disk('public')->put($filename, file_get_contents($file));
+
+        $pendaftaran->bukti_bayar = $filename;
         $pendaftaran->save();
 
         return response()->json([
             'success' => true,
-            'message' => 'Check-in berhasil.',
-            'data'    => $pendaftaran,
+            'message' => 'Bukti bayar berhasil diupload',
+            'data' => $pendaftaran,
         ]);
     }
 }

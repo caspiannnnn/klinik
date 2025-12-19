@@ -2,13 +2,13 @@
 
 use Illuminate\Support\Facades\Route;
 
-use App\Http\Controllers\Api\AuthApiController;
-use App\Http\Controllers\Api\ProfileApiController;
-use App\Http\Controllers\Api\PendaftaranApiController;
-use App\Http\Controllers\Api\RekamMedisApiController;
-use App\Http\Controllers\Api\JadwalDokterApiController;
-use App\Http\Controllers\Api\NotifikasiApiController;
-use App\Http\Controllers\Api\PembayaranApiController;
+use App\Http\Controllers\API\AuthApiController;
+use App\Http\Controllers\API\ProfileApiController;
+use App\Http\Controllers\API\PendaftaranApiController;
+use App\Http\Controllers\API\RekamMedisApiController;
+use App\Http\Controllers\API\JadwalDokterApiController;
+use App\Http\Controllers\API\NotifikasiApiController;
+use App\Http\Controllers\API\PembayaranApiController;
 
 Route::get('/health', function () {
     return response()->json([
@@ -19,28 +19,22 @@ Route::get('/health', function () {
 
 Route::prefix('auth')->group(function () {
     Route::post('/login', [AuthApiController::class, 'login']);
-    Route::post('/register', [AuthApiController::class, 'registerPasien']);
-
-    Route::middleware('auth:sanctum')->group(function () {
-        Route::get('/me', [AuthApiController::class, 'me']);
-        Route::post('/logout', [AuthApiController::class, 'logout']);
-    });
+    Route::post('/register', [AuthApiController::class, 'register']);
 });
 
 Route::middleware('auth:sanctum')->group(function () {
 
     // ===== Profile =====
-    Route::get('/profile', [ProfileApiController::class, 'show']);
-    Route::put('/profile', [ProfileApiController::class, 'update']);
-    Route::post('/profile/password', [ProfileApiController::class, 'updatePassword']);
+    Route::get('profile', [ProfileApiController::class, 'show']);
+    Route::put('profile', [ProfileApiController::class, 'update']);
 
-    // ===== Pendaftaran (konsisten: /api/pendaftarans) =====
-    Route::get('pendaftarans/hari-ini', [PendaftaranApiController::class, 'today']);
-    Route::post('pendaftarans/{pendaftaran}/checkin', [PendaftaranApiController::class, 'checkin']);
+    // ===== Pendaftaran =====
+    Route::get('pendaftarans/user/{user_id}', [PendaftaranApiController::class, 'byUser']);
+    Route::post('pendaftarans/{pendaftaran}/upload-bukti', [PendaftaranApiController::class, 'uploadBukti']);
     Route::apiResource('pendaftarans', PendaftaranApiController::class);
 
     // ===== Rekam Medis =====
-    Route::get('rekam-medis/pasien/{user_id}', [RekamMedisApiController::class, 'byPatient']);
+    Route::get('rekam-medis/pasien/{pasien_id}', [RekamMedisApiController::class, 'byPasien']);
     Route::apiResource('rekam-medis', RekamMedisApiController::class);
 
     // ===== Jadwal Dokter =====

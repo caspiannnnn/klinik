@@ -9,7 +9,7 @@
         <div class="mb-6">
             <h2 class="text-lg font-semibold mb-2">Data Pasien</h2>
             <p><strong>Nama:</strong> {{ $pendaftaran->nama }}</p>
-            <p><strong>Tanggal Lahir:</strong> {{ $pendaftaran->tanggal_lahir->format('Y-m-d') }}</p>
+            <p><strong>Tanggal Lahir:</strong> {{ \Carbon\Carbon::parse($pendaftaran->tanggal_lahir)->format('Y-m-d') }}</p>
             <p><strong>Jenis Kelamin:</strong> {{ $pendaftaran->jenis_kelamin }}</p>
         </div>
 
@@ -40,7 +40,7 @@
                 <button type="submit" class="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 transition">
                     Simpan Rekam Medis
                 </button>
-                <a href="{{ url('/dokter/pasien') }}" class="ml-4 text-gray-600 hover:underline">Kembali</a>
+                <a href="{{ route('dokter.daftar_rekam_medis') }}" class="ml-4 text-gray-600 hover:underline">Kembali</a>
             </div>
         </form>
     </div>
@@ -72,7 +72,7 @@
 <div id="errorModal" class="fixed inset-0 z-50 flex items-center justify-center">
     <div class="absolute inset-0 bg-black/50"></div>
 
-    <div class="relative bg-white rounded-lg shadow-xl w-full max-w-md mx-4 p-6">
+    <div class="relative bg-white rounded-lg shadow rounded-lg shadow-xl w-full max-w-md mx-4 p-6">
         <h2 class="text-xl font-bold text-red-700 mb-2">❌ Gagal!</h2>
         <p class="text-gray-700 mb-3">Terjadi kesalahan pada input:</p>
 

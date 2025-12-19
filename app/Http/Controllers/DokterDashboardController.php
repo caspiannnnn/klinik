@@ -3,24 +3,51 @@
 namespace App\Http\Controllers;
 
 use App\Models\Pendaftaran;
-use Illuminate\Http\Request;
 use Carbon\Carbon;
 
 class DokterDashboardController extends Controller
 {
     public function index()
     {
-        // Total pasien dengan status diterima
-        $totalPasien = Pendaftaran::where('status', 'Diterima')->count();
+        $today = Carbon::now('Asia/Jakarta')->toDateString();
 
-        // Gunakan created_at untuk ambil jadwal hari ini
-        $jadwalHariIni = Pendaftaran::whereDate('created_at', Carbon::today())->get();
+        // ✅ Jadwal hari ini = pendaftaran yang statusnya "diterima"
+        // dan statusnya diubah (updated_at) pada hari ini.
+        $jadwalHariIni = Pendaftaran::with('user')
+            ->where(function ($q) {
+                $q->where('status', 'diterima')
+                  ->orWhere('status', 'Diterima')
+                  ->orWhere('status', 'DITERIMA');
+            })
+            ->whereDate('updated_at', $today)
+            ->orderBy('updated_at', 'asc')
+            ->get();
+
         $totalJadwal = $jadwalHariIni->count();
 
-        return view('dokter.index', [
-            'totalPasien' => $totalPasien,
-            'totalJadwal' => $totalJadwal,
-            'jadwalHariIni' => $jadwalHariIni,
-        ]);
+        // Total pasien unik yang pernah diterima (sepanjang waktu)
+        $totalPasien = Pendaftaran::where(function ($q) {
+                $q->where('status', 'diterima')
+                  ->orWhere('status', 'Diterima')
+                  ->orWhere('status', 'DITERIMA');
+            })
+            ->distinct('user_id')
+            ->count('user_id');
+
+        // Total konsultasi = total pendaftaran diterima (sepanjang waktu)
+        $totalKonsultasi = Pendaftaran::where(function ($q) {
+                $q->where('status', 'diterima')
+                  ->orWhere('status', 'Diterima')
+                  ->orWhere('status', 'DITERIMA');
+            })
+            ->count();
+
+        // ✅ file view kamu adalah resources/views/dokter/index.blade.php
+        return view('dokter.index', compact(
+            'totalPasien',
+            'totalJadwal',
+            'totalKonsultasi',
+            'jadwalHariIni'
+        ));
     }
 }

@@ -50,13 +50,24 @@
 
                                 <div class="mt-3 flex flex-wrap items-center gap-3 text-xs text-gray-500">
                                     <span>{{ $notif->created_at->format('d-m-Y H:i') }}</span>
+
                                     @if($notif->tipe)
                                         <span class="px-2 py-1 bg-gray-100 rounded-full text-gray-600">
                                             {{ $notif->tipe }}
                                         </span>
                                     @endif
-                                    @if($notif->link)
-                                        <a href="{{ $notif->link }}" class="text-blue-600 hover:underline">
+
+                                    {{-- ✅ kalau link kosong/null, tidak tampil sama sekali --}}
+                                    @if(!empty($notif->link))
+                                        @php
+                                            $link = $notif->link;
+
+                                            // ✅ khusus notifikasi status pendaftaran -> arahkan ke Pendaftaran Saya
+                                            if (($notif->judul ?? '') === 'Status Pendaftaran') {
+                                                $link = route('pendaftaran.saya');
+                                            }
+                                        @endphp
+                                        <a href="{{ $link }}" class="text-blue-600 hover:underline">
                                             Lihat detail
                                         </a>
                                     @endif

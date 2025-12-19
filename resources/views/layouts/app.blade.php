@@ -48,6 +48,13 @@
                         class="flex items-center py-2 px-4 rounded hover:bg-blue-100 transition duration-200">
                         <i class="fas fa-user-plus mr-2"></i> Pendaftaran
                     </a>
+
+                    {{-- ✅ MENU BARU: Pendaftaran Saya --}}
+                    <a href="{{ route('pendaftaran.saya') }}"
+                        class="flex items-center py-2 px-4 rounded hover:bg-blue-100 transition duration-200">
+                        <i class="fas fa-list mr-2"></i> Pendaftaran Saya
+                    </a>
+
                     <a href="/rekam-medis"
                         class="flex items-center py-2 px-4 rounded hover:bg-blue-100 transition duration-200">
                         <i class="fas fa-folder mr-2"></i> Rekam Medis
