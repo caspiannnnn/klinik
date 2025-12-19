@@ -2,52 +2,92 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\Pendaftaran;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 use Carbon\Carbon;
+use App\Models\Pendaftaran;
 
 class DokterDashboardController extends Controller
 {
     public function index()
     {
-        $today = Carbon::now('Asia/Jakarta')->toDateString();
+        $dokter = Auth::user();
+        $now = Carbon::now();
 
-        // ✅ Jadwal hari ini = pendaftaran yang statusnya "diterima"
-        // dan statusnya diubah (updated_at) pada hari ini.
-        $jadwalHariIni = Pendaftaran::with('user')
-            ->where(function ($q) {
-                $q->where('status', 'diterima')
-                  ->orWhere('status', 'Diterima')
-                  ->orWhere('status', 'DITERIMA');
+        /**
+         * ✅ Minggu dimulai Senin 00:00 (auto “ganti minggu” saat Senin 00:00)
+         * Minggu ini  : Senin - Minggu
+         * Minggu depan: Senin - Minggu berikutnya
+         */
+        $startThisWeek = $now->copy()->startOfWeek(Carbon::MONDAY)->startOfDay();
+        $endThisWeek   = $now->copy()->endOfWeek(Carbon::SUNDAY)->endOfDay();
+
+        $startNextWeek = $startThisWeek->copy()->addWeek();
+        $endNextWeek   = $endThisWeek->copy()->addWeek();
+
+        // ✅ Jadwal Minggu Ini
+        $jadwalMingguIni = Pendaftaran::with('user')
+            ->where(function ($q) use ($dokter) {
+                $q->where('dokter_id', $dokter->id)
+                  ->orWhere('diterima_oleh_dokter_id', $dokter->id);
             })
-            ->whereDate('updated_at', $today)
-            ->orderBy('updated_at', 'asc')
+            ->whereBetween('tanggal_kunjungan', [
+                $startThisWeek->toDateString(),
+                $endThisWeek->toDateString(),
+            ])
+            ->orderBy('tanggal_kunjungan')
+            ->orderBy('jam_kunjungan')
             ->get();
 
-        $totalJadwal = $jadwalHariIni->count();
-
-        // Total pasien unik yang pernah diterima (sepanjang waktu)
-        $totalPasien = Pendaftaran::where(function ($q) {
-                $q->where('status', 'diterima')
-                  ->orWhere('status', 'Diterima')
-                  ->orWhere('status', 'DITERIMA');
+        // ✅ Jadwal Minggu Depan
+        $jadwalMingguDepan = Pendaftaran::with('user')
+            ->where(function ($q) use ($dokter) {
+                $q->where('dokter_id', $dokter->id)
+                  ->orWhere('diterima_oleh_dokter_id', $dokter->id);
             })
+            ->whereBetween('tanggal_kunjungan', [
+                $startNextWeek->toDateString(),
+                $endNextWeek->toDateString(),
+            ])
+            ->orderBy('tanggal_kunjungan')
+            ->orderBy('jam_kunjungan')
+            ->get();
+
+        // ✅ Total Pasien (unik berdasarkan user_id)
+        $totalPasien = Pendaftaran::query()
+            ->where(function ($q) use ($dokter) {
+                $q->where('dokter_id', $dokter->id)
+                  ->orWhere('diterima_oleh_dokter_id', $dokter->id);
+            })
+            ->whereNotNull('user_id')
             ->distinct('user_id')
             ->count('user_id');
 
-        // Total konsultasi = total pendaftaran diterima (sepanjang waktu)
-        $totalKonsultasi = Pendaftaran::where(function ($q) {
-                $q->where('status', 'diterima')
-                  ->orWhere('status', 'Diterima')
-                  ->orWhere('status', 'DITERIMA');
+        // ✅ Jadwal Hari Ini (tanggal_kunjungan = hari ini)
+        $totalJadwal = Pendaftaran::query()
+            ->where(function ($q) use ($dokter) {
+                $q->where('dokter_id', $dokter->id)
+                  ->orWhere('diterima_oleh_dokter_id', $dokter->id);
+            })
+            ->whereDate('tanggal_kunjungan', $now->toDateString())
+            ->count();
+
+        // ✅ Total Konsultasi (jumlah pendaftaran milik dokter ini)
+        $totalKonsultasi = Pendaftaran::query()
+            ->where(function ($q) use ($dokter) {
+                $q->where('dokter_id', $dokter->id)
+                  ->orWhere('diterima_oleh_dokter_id', $dokter->id);
             })
             ->count();
 
-        // ✅ file view kamu adalah resources/views/dokter/index.blade.php
-        return view('dokter.index', compact(
-            'totalPasien',
-            'totalJadwal',
-            'totalKonsultasi',
-            'jadwalHariIni'
-        ));
+        // ✅ Pastikan nama view sesuai file yang kamu pakai
+        // Jika file kamu ada di: resources/views/dokter/index.blade.php
+        return view('dokter.index', [
+            'totalPasien' => $totalPasien,
+            'totalJadwal' => $totalJadwal,
+            'totalKonsultasi' => $totalKonsultasi,
+            'jadwalMingguIni' => $jadwalMingguIni,
+            'jadwalMingguDepan' => $jadwalMingguDepan,
+        ]);
     }
 }
