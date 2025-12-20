@@ -1,6 +1,9 @@
 @extends('layouts.app')
 
 @section('content')
+    <h1 class="text-3xl font-bold mb-6 text-blue-600">Dashboard Resepsionis</h1>
+    <p class="text-lg mb-4">Selamat datang, {{ Auth::user()->name }}!</p>
+
     <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-10">
         <div class="bg-white p-6 rounded shadow text-center">
             <h2 class="text-lg font-semibold text-gray-600 mb-2">

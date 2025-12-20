@@ -3,6 +3,7 @@
 @section('content')
 <div class="max-w-7xl mx-auto px-6 py-8">
     <h1 class="text-3xl font-bold text-blue-800 mb-6">Dashboard Admin</h1>
+    <p class="text-lg mb-4">Selamat datang, {{ Auth::user()->name }}!</p>
 
     {{-- Statistik Ringkasan --}}
     <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-10">
